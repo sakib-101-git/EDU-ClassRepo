@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - EDU ClassRepo</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .admin-header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 24px 28px;
+            border-radius: var(--radius-lg);
+            margin-bottom: 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .admin-header::before {
+            content: '';
+            position: absolute;
+            top: -30px;
+            right: -30px;
+            width: 120px;
+            height: 120px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 50%;
+        }
+        
+        .admin-header h1 {
+            font-size: 22px;
+            position: relative;
+        }
+        
+        .admin-header .badge {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 8px 16px;
+            font-size: 13px;
+            position: relative;
+        }
+        
+        .approval-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .course-tag {
+            display: inline-block;
+            background: var(--bg-hover);
+            color: var(--text-medium);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-book-reader"></i>
+                EDU ClassRepo
+            </div>
+            <div class="user-menu">
+                <div class="user-info">
+                    <div class="user-name" id="user-name">Loading...</div>
+                    <div class="user-role" id="user-role">-</div>
+                </div>
+                <a href="settings.html" class="profile-avatar" id="profile-avatar" title="Account Settings">
+                    <i class="fas fa-user-circle" style="font-size: 24px; color: #5c6b7a;"></i>
+                </a>
+            </div>
+        </header>
+
+        <div class="app-body">
+            <!-- Sidebar -->
+            <nav class="sidebar"></nav>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                <div class="admin-header">
+                    <h1><i class="fas fa-tasks"></i> Pending File Approvals</h1>
+                    <span class="badge" id="pending-count">0 pending</span>
+                </div>
+
+                <!-- Pending Files List -->
+                <div class="file-list" id="pending-list">
+                    <!-- Files will be loaded here -->
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // Check authentication
+        const user = checkAuth();
+        
+        // Redirect non-admin users
+        if (user && user.role !== 'admin') {
+            window.location.href = 'dashboard.html';
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadHeader();
+            loadSidebar('admin');
+            loadAdminPanel();
+        });
+
+        // Load pending files
+        function loadAdminPanel() {
+            const files = getPendingFiles();
+            const fileList = document.getElementById('pending-list');
+            
+            document.getElementById('pending-count').textContent = `${files.length} pending`;
+            
+            if (files.length === 0) {
+                fileList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-check-circle" style="color: var(--success);"></i>
+                        <h3>All caught up!</h3>
+                        <p>There are no files waiting for approval.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Get course info for each file
+            const courses = JSON.parse(localStorage.getItem('edu_courses')) || [];
+            
+            fileList.innerHTML = files.map(file => {
+                const icon = getFileIcon(file.name);
+                const course = courses.find(c => c.id === file.courseId);
+                const courseName = course ? `${course.code}: ${course.title}` : 'Unknown Course';
+                const courseDept = course ? course.dept : '';
+                
+                return `
+                    <div class="file-item">
+                        <div class="file-icon ${icon.class}">
+                            <i class="fas ${icon.icon}"></i>
+                        </div>
+                        <div class="file-info">
+                            <div class="file-name">${file.name}</div>
+                            <div class="file-meta">
+                                Uploaded by <strong>${file.uploadedBy}</strong> • ${file.uploadDate} • ${file.size}
+                            </div>
+                            <div class="course-tag">
+                                <i class="fas fa-book"></i> ${courseName} (${courseDept})
+                            </div>
+                        </div>
+                        <div class="approval-actions">
+                            <button class="btn btn-success btn-small" onclick="handleApprove(${file.id})">
+                                <i class="fas fa-check"></i> Approve
+                            </button>
+                            <button class="btn btn-danger btn-small" onclick="handleReject(${file.id})">
+                                <i class="fas fa-times"></i> Reject
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Handle approve
+        function handleApprove(fileId) {
+            approveFile(fileId);
+            alert('File approved successfully!');
+        }
+        
+        // Handle reject
+        function handleReject(fileId) {
+            rejectFile(fileId);
+        }
+    </script>
+</body>
+</html>

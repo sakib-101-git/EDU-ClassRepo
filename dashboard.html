@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - EDU ClassRepo</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-book-reader"></i>
+                EDU ClassRepo
+            </div>
+            <div class="user-menu">
+                <div class="user-info">
+                    <div class="user-name" id="user-name">Loading...</div>
+                    <div class="user-role" id="user-role">-</div>
+                </div>
+                <a href="settings.html" class="profile-avatar" id="profile-avatar" title="Account Settings">
+                    <i class="fas fa-user-circle" style="font-size: 24px; color: #5c6b7a;"></i>
+                </a>
+            </div>
+        </header>
+
+        <div class="app-body">
+            <!-- Sidebar -->
+            <nav class="sidebar"></nav>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                <div class="page-header">
+                    <h1 class="page-title">Available Courses</h1>
+                    <div class="filter-controls">
+                        <!-- Search Box -->
+                        <div class="search-box">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" class="search-input" id="search-input" 
+                                   placeholder="Search courses..." onkeyup="filterCourses()">
+                        </div>
+                        
+                        <select class="filter-select" id="dept-filter" onchange="filterCourses()">
+                            <option value="All">All Departments</option>
+                            <option value="CSE">CSE</option>
+                            <option value="EEE">EEE</option>
+                            <option value="BBA">BBA</option>
+                            <option value="ENG">English</option>
+                            <option value="LAW">Law</option>
+                            <option value="PHA">Pharmacy</option>
+                        </select>
+                        
+                        <button class="btn btn-primary hidden" id="create-course-btn" onclick="openModal('create-course-modal')">
+                            <i class="fas fa-plus"></i> Create Course
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Course Grid -->
+                <div class="course-grid" id="course-grid"></div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Create Course Modal -->
+    <div class="modal" id="create-course-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New Course</h3>
+                <button class="modal-close" onclick="closeModal('create-course-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="create-course-form" onsubmit="handleCreateCourse(event)">
+                    <div class="form-group">
+                        <label>Course Code</label>
+                        <input type="text" class="form-input" id="course-code" placeholder="e.g., CSE 301" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Course Title</label>
+                        <input type="text" class="form-input" id="course-title" placeholder="e.g., Database Systems" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Department</label>
+                            <select class="form-select" id="course-dept" required>
+                                <option value="CSE">CSE</option>
+                                <option value="EEE">EEE</option>
+                                <option value="BBA">BBA</option>
+                                <option value="ENG">English</option>
+                                <option value="LAW">Law</option>
+                                <option value="PHA">Pharmacy</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Instructor</label>
+                            <input type="text" class="form-input" id="course-instructor" placeholder="Instructor name">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Create Course</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        const user = checkAuth();
+        
+        const deptColors = {
+            'CSE': 'course-cse',
+            'EEE': 'course-eee',
+            'BBA': 'course-bba',
+            'ENG': 'course-eng',
+            'LAW': 'course-law',
+            'PHA': 'course-pha'
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadHeader();
+            loadSidebar('dashboard');
+            initializeCourses();
+            loadDashboard();
+            
+            if (user && user.role === 'admin') {
+                document.getElementById('create-course-btn').classList.remove('hidden');
+            }
+        });
+
+        function loadDashboard() {
+            const deptFilter = document.getElementById('dept-filter').value;
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            let courses = getCourses(deptFilter);
+            
+            // Apply search filter
+            if (searchTerm) {
+                courses = courses.filter(c => 
+                    c.code.toLowerCase().includes(searchTerm) ||
+                    c.title.toLowerCase().includes(searchTerm) ||
+                    (c.instructor && c.instructor.toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            const enrolledCourses = getEnrolledCourses();
+            const isAdmin = user && user.role === 'admin';
+            
+            const grid = document.getElementById('course-grid');
+            
+            if (courses.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <i class="fas fa-search"></i>
+                        <h3>No courses found</h3>
+                        <p>Try a different search term or department filter.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            grid.innerHTML = courses.map(course => {
+                const isEnrolled = enrolledCourses.some(c => c.id === course.id);
+                const fileCount = getCourseFiles(course.id).length;
+                const colorClass = deptColors[course.dept] || '';
+                
+                return `
+                    <div class="course-card ${colorClass}">
+                        <div class="card-header">
+                            <h3>${course.code}: ${course.title}</h3>
+                            <span><i class="fas fa-user-tie"></i> ${course.instructor || 'TBA'}</span>
+                        </div>
+                        <div class="card-body">
+                            <p><i class="fas fa-file-alt"></i> ${fileCount} file${fileCount !== 1 ? 's' : ''} available</p>
+                            ${isAdmin ? `
+                                <button class="btn btn-danger btn-small" onclick="event.stopPropagation(); deleteCourse(${course.id})">
+                                    <i class="fas fa-trash"></i> Delete Course
+                                </button>
+                            ` : `
+                                ${isEnrolled ? `
+                                    <a href="course.html?id=${course.id}" class="btn btn-secondary btn-small" onclick="event.stopPropagation();">
+                                        <i class="fas fa-folder-open"></i> Open Course
+                                    </a>
+                                ` : `
+                                    <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); enrollInCourse(${course.id})">
+                                        <i class="fas fa-plus"></i> Enroll Now
+                                    </button>
+                                `}
+                            `}
+                        </div>
+                        <div class="card-footer">
+                            <span><i class="fas fa-building"></i> ${course.dept}</span>
+                            <span>${isEnrolled ? '<i class="fas fa-check-circle text-success"></i> Enrolled' : ''}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterCourses() {
+            loadDashboard();
+        }
+
+        function handleCreateCourse(event) {
+            event.preventDefault();
+            
+            const code = document.getElementById('course-code').value;
+            const title = document.getElementById('course-title').value;
+            const dept = document.getElementById('course-dept').value;
+            const instructor = document.getElementById('course-instructor').value;
+            
+            createCourse(code, title, dept, instructor);
+            
+            closeModal('create-course-modal');
+            document.getElementById('create-course-form').reset();
+            loadDashboard();
+            
+            alert('Course created successfully!');
+        }
+    </script>
+</body>
+</html>

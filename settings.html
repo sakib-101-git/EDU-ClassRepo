@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Settings - EDU ClassRepo</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .settings-container {
+            max-width: 700px;
+        }
+        
+        .settings-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .settings-section h3 {
+            font-size: 18px;
+            color: var(--text-dark);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .settings-section h3 i {
+            color: var(--primary);
+        }
+        
+        /* Profile Picture Section */
+        .profile-pic-section {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .profile-pic-preview {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: var(--bg-soft);
+            border: 3px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .profile-pic-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .profile-pic-preview i {
+            font-size: 48px;
+            color: var(--text-muted);
+        }
+        
+        .profile-pic-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .profile-pic-actions p {
+            font-size: 13px;
+            color: var(--text-light);
+        }
+        
+        /* Info Display */
+        .info-row {
+            display: flex;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            width: 140px;
+            font-weight: 600;
+            color: var(--text-medium);
+            font-size: 14px;
+        }
+        
+        .info-value {
+            flex: 1;
+            color: var(--text-dark);
+            font-size: 14px;
+        }
+        
+        /* Password Section */
+        .password-requirements {
+            background: var(--bg-soft);
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: var(--text-medium);
+        }
+        
+        .password-requirements ul {
+            margin: 8px 0 0 20px;
+        }
+        
+        .password-requirements li {
+            margin-bottom: 4px;
+        }
+        
+        .input-wrapper {
+            position: relative;
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+        }
+        
+        .password-toggle:hover {
+            color: var(--primary);
+        }
+        
+        .form-input.has-toggle {
+            padding-right: 45px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-book-reader"></i>
+                EDU ClassRepo
+            </div>
+            <div class="user-menu">
+                <div class="user-info">
+                    <div class="user-name" id="user-name">Loading...</div>
+                    <div class="user-role" id="user-role">-</div>
+                </div>
+                <a href="settings.html" class="profile-avatar" id="profile-avatar" title="Account Settings">
+                    <i class="fas fa-user-circle" style="font-size: 24px; color: #5c6b7a;"></i>
+                </a>
+            </div>
+        </header>
+
+        <div class="app-body">
+            <!-- Sidebar -->
+            <nav class="sidebar"></nav>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                <div class="page-header">
+                    <h1 class="page-title">Account Settings</h1>
+                </div>
+
+                <div class="settings-container">
+                    <!-- Profile Picture Section -->
+                    <div class="settings-section">
+                        <h3><i class="fas fa-camera"></i> Profile Picture</h3>
+                        
+                        <div class="profile-pic-section">
+                            <div class="profile-pic-preview" id="profile-pic-preview">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="profile-pic-actions">
+                                <input type="file" id="profile-pic-input" accept="image/*" style="display: none;" onchange="handleProfilePicChange(event)">
+                                <button class="btn btn-secondary btn-small" onclick="document.getElementById('profile-pic-input').click()">
+                                    <i class="fas fa-upload"></i> Upload Photo
+                                </button>
+                                <button class="btn btn-danger btn-small" id="remove-pic-btn" onclick="removeProfilePic()" style="display: none;">
+                                    <i class="fas fa-trash"></i> Remove
+                                </button>
+                                <p>JPG, PNG or GIF. Max 2MB.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Account Information Section -->
+                    <div class="settings-section">
+                        <h3><i class="fas fa-user"></i> Account Information</h3>
+                        
+                        <div class="info-row">
+                            <div class="info-label">Full Name</div>
+                            <div class="info-value" id="info-name">-</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Student ID</div>
+                            <div class="info-value" id="info-id">-</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Email</div>
+                            <div class="info-value" id="info-email">-</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Department</div>
+                            <div class="info-value" id="info-dept">-</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Gender</div>
+                            <div class="info-value" id="info-gender">-</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Role</div>
+                            <div class="info-value" id="info-role">-</div>
+                        </div>
+                    </div>
+
+                    <!-- Change Password Section -->
+                    <div class="settings-section">
+                        <h3><i class="fas fa-lock"></i> Change Password</h3>
+                        
+                        <div class="password-requirements">
+                            <strong>Password Requirements:</strong>
+                            <ul>
+                                <li>At least 6 characters long</li>
+                                <li>Should include numbers and letters</li>
+                            </ul>
+                        </div>
+                        
+                        <form id="password-form" onsubmit="handlePasswordChange(event)">
+                            <div class="form-group">
+                                <label>Current Password</label>
+                                <div class="input-wrapper">
+                                    <input type="password" class="form-input has-toggle" id="current-password" 
+                                           placeholder="Enter current password" required>
+                                    <button type="button" class="password-toggle" onclick="togglePassword('current-password', this)">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>New Password</label>
+                                    <div class="input-wrapper">
+                                        <input type="password" class="form-input has-toggle" id="new-password" 
+                                               placeholder="Enter new password" required>
+                                        <button type="button" class="password-toggle" onclick="togglePassword('new-password', this)">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Confirm Password</label>
+                                    <div class="input-wrapper">
+                                        <input type="password" class="form-input has-toggle" id="confirm-password" 
+                                               placeholder="Confirm new password" required>
+                                        <button type="button" class="password-toggle" onclick="togglePassword('confirm-password', this)">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-key"></i> Update Password
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        const user = checkAuth();
+        let fullUserData = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadHeader();
+            loadSidebar('settings');
+            loadUserInfo();
+        });
+
+        function loadUserInfo() {
+            const users = JSON.parse(localStorage.getItem('edu_users')) || {};
+            fullUserData = users[user.email];
+            
+            if (fullUserData) {
+                document.getElementById('info-name').textContent = fullUserData.name;
+                document.getElementById('info-id').textContent = fullUserData.id;
+                document.getElementById('info-email').textContent = fullUserData.email;
+                document.getElementById('info-dept').textContent = fullUserData.department || 'N/A';
+                document.getElementById('info-gender').textContent = fullUserData.gender ? 
+                    (fullUserData.gender.charAt(0).toUpperCase() + fullUserData.gender.slice(1)) : 'N/A';
+                document.getElementById('info-role').textContent = fullUserData.role.charAt(0).toUpperCase() + fullUserData.role.slice(1);
+                
+                // Load profile picture
+                updateProfilePicDisplay();
+            }
+        }
+
+        function updateProfilePicDisplay() {
+            const preview = document.getElementById('profile-pic-preview');
+            const removeBtn = document.getElementById('remove-pic-btn');
+            
+            if (fullUserData && fullUserData.profilePic) {
+                preview.innerHTML = `<img src="${fullUserData.profilePic}" alt="Profile">`;
+                removeBtn.style.display = 'inline-flex';
+            } else {
+                const icon = fullUserData && fullUserData.gender === 'female' ? 'fa-user' : 'fa-user';
+                const color = fullUserData && fullUserData.gender === 'female' ? '#9c5c7a' : '#5c6b7a';
+                preview.innerHTML = `<i class="fas ${icon}" style="font-size: 48px; color: ${color};"></i>`;
+                removeBtn.style.display = 'none';
+            }
+        }
+
+        function handleProfilePicChange(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Check file size (max 2MB)
+            if (file.size > 2 * 1024 * 1024) {
+                alert('File size must be less than 2MB');
+                return;
+            }
+            
+            // Check file type
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file');
+                return;
+            }
+            
+            // Convert to base64 and save
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64 = e.target.result;
+                
+                // Update user data
+                let users = JSON.parse(localStorage.getItem('edu_users')) || {};
+                if (users[user.email]) {
+                    users[user.email].profilePic = base64;
+                    localStorage.setItem('edu_users', JSON.stringify(users));
+                    fullUserData = users[user.email];
+                    
+                    updateProfilePicDisplay();
+                    loadHeader(); // Update header avatar
+                    
+                    alert('Profile picture updated successfully!');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeProfilePic() {
+            if (!confirm('Are you sure you want to remove your profile picture?')) return;
+            
+            let users = JSON.parse(localStorage.getItem('edu_users')) || {};
+            if (users[user.email]) {
+                users[user.email].profilePic = null;
+                localStorage.setItem('edu_users', JSON.stringify(users));
+                fullUserData = users[user.email];
+                
+                updateProfilePicDisplay();
+                loadHeader();
+                
+                alert('Profile picture removed');
+            }
+        }
+
+        function togglePassword(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        function handlePasswordChange(event) {
+            event.preventDefault();
+            
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            // Validate current password
+            if (currentPassword !== fullUserData.password) {
+                alert('Current password is incorrect');
+                return;
+            }
+            
+            // Validate new password
+            if (newPassword.length < 6) {
+                alert('New password must be at least 6 characters');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                alert('New passwords do not match');
+                return;
+            }
+            
+            if (newPassword === currentPassword) {
+                alert('New password must be different from current password');
+                return;
+            }
+            
+            // Update password
+            let users = JSON.parse(localStorage.getItem('edu_users')) || {};
+            if (users[user.email]) {
+                users[user.email].password = newPassword;
+                localStorage.setItem('edu_users', JSON.stringify(users));
+                fullUserData = users[user.email];
+                
+                document.getElementById('password-form').reset();
+                alert('Password updated successfully!');
+            }
+        }
+    </script>
+</body>
+</html>
+
