@@ -1,76 +1,115 @@
-/* =============================================
-   EDU CLASSREPO - MAIN JAVASCRIPT FILE
-   All frontend logic in one file for simplicity
-   ============================================= */
+/*
+ * ========================================
+ * EDU CLASSREPO - FRONTEND JAVASCRIPT
+ * All API calls and UI functions
+ * ========================================
+ */
 
-// API URL - Change this when deploying
-const API_URL = 'http://localhost:3000/api';
+const API = 'http://localhost:3000/api';
 
-// Set to true to use localStorage (demo mode without backend)
-// Set to false to use actual backend API
-const USE_LOCAL_STORAGE = true;
+/*
+ * ========================================
+ * AUTH FUNCTIONS
+ * ========================================
+ */
 
-// Current user type for login page
-let currentUserType = 'student';
-
-
-/* =============================================
-   AUTHENTICATION FUNCTIONS
-   ============================================= */
-
-// Initialize default admin accounts
-function initializeAdmins() {
-    let users = JSON.parse(localStorage.getItem('edu_users')) || {};
-    
-    // Create admin accounts if they don't exist
-    if (!users['admin1@eastdelta.edu.bd']) {
-        users['admin1@eastdelta.edu.bd'] = {
-            id: 'ADM-001',
-            name: 'Admin One',
-            email: 'admin1@eastdelta.edu.bd',
-            password: 'admin123',
-            role: 'admin',
-            department: 'Admin'
-        };
-    }
-    
-    if (!users['admin2@eastdelta.edu.bd']) {
-        users['admin2@eastdelta.edu.bd'] = {
-            id: 'ADM-002',
-            name: 'Admin Two',
-            email: 'admin2@eastdelta.edu.bd',
-            password: 'admin123',
-            role: 'admin',
-            department: 'Admin'
-        };
-    }
-    
-    localStorage.setItem('edu_users', JSON.stringify(users));
+// Get stored token
+function getToken() {
+    return localStorage.getItem('token');
 }
 
-// Validate email domain
-function isValidEmail(email) {
-    return email.toLowerCase().endsWith('@eastdelta.edu.bd');
+// Get stored user
+function getUser() {
+    const user = localStorage.getItem('user');
+    return user ? JSON.parse(user) : null;
 }
 
-// Set user type (student/admin) on login page
+// Check if logged in
+function isLoggedIn() {
+    return !!getToken();
+}
+
+// Logout
+function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = 'index.html';
+}
+
+// Protect page - redirect if not logged in
+function checkAuth() {
+    if (!isLoggedIn()) {
+        window.location.href = 'index.html';
+        return null;
+    }
+    return getUser();
+}
+
+/*
+ * ========================================
+ * API HELPER
+ * ========================================
+ */
+
+// Make API calls
+async function api(endpoint, options = {}) {
+    const token = getToken();
+    
+    const config = {
+        headers: { 'Content-Type': 'application/json' },
+        ...options
+    };
+    
+    if (token) {
+        config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    try {
+        const res = await fetch(`${API}${endpoint}`, config);
+        return await res.json();
+    } catch (err) {
+        console.error('API Error:', err);
+        return { error: 'Connection failed' };
+    }
+}
+
+/*
+ * ========================================
+ * LOGIN PAGE FUNCTIONS
+ * ========================================
+ */
+
+let userType = 'student';
+
+// Toggle between student and admin login
 function setUserType(type) {
-    currentUserType = type;
+    userType = type;
     
-    // Update toggle buttons
-    document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+    // Update button styles
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
     event.target.classList.add('active');
     
     // Show/hide admin notice
-    const adminNotice = document.getElementById('admin-notice');
-    const loginFooter = document.getElementById('login-footer');
+    const notice = document.getElementById('admin-notice');
+    const footer = document.getElementById('login-footer');
     
     if (type === 'admin') {
-        adminNotice.classList.remove('hidden');
-        loginFooter.classList.add('hidden');
+        notice?.classList.remove('hidden');
+        footer?.classList.add('hidden');
     } else {
-        adminNotice.classList.add('hidden');
-        loginFooter.classList.remove('hidden');
+        notice?.classList.add('hidden');
+        footer?.classList.remove('hidden');
+    }
+}
+
+// Show error message
+function showError(msg) {
+    const el = document.getElementById('error-message');
+    if (el) {
+        el.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${msg}`;
+        el.classList.remove('hidden');
     }
 }
 
@@ -90,207 +129,252 @@ function showSignupForm() {
 function showLoginForm() {
     document.getElementById('login-form').classList.remove('hidden');
     document.getElementById('signup-form').classList.add('hidden');
+    document.getElementById('forgot-form')?.classList.add('hidden');
     document.getElementById('login-footer').classList.remove('hidden');
     document.getElementById('signup-footer').classList.add('hidden');
     document.getElementById('login-toggle').classList.remove('hidden');
-    document.getElementById('form-title').textContent = 'Welcome Back!';
+    document.getElementById('form-title').textContent = 'Welcome Back';
     document.getElementById('form-subtitle').textContent = 'Sign in to access your courses';
     document.getElementById('error-message').classList.add('hidden');
 }
 
-// Show error message
-function showError(message) {
-    const errorDiv = document.getElementById('error-message');
-    errorDiv.textContent = message;
-    errorDiv.classList.remove('hidden');
+// Show forgot password form
+function showForgotPassword() {
+    document.getElementById('login-form').classList.add('hidden');
+    document.getElementById('signup-form').classList.add('hidden');
+    document.getElementById('forgot-form')?.classList.remove('hidden');
+    document.getElementById('login-footer').classList.add('hidden');
+    document.getElementById('signup-footer').classList.add('hidden');
+    document.getElementById('login-toggle').classList.add('hidden');
+    document.getElementById('form-title').textContent = 'Reset Password';
+    document.getElementById('form-subtitle').textContent = 'Enter your email to receive reset instructions';
+    document.getElementById('error-message').classList.add('hidden');
 }
 
-// Handle login form submission
-function handleLogin(event) {
-    event.preventDefault();
+// Handle forgot password (placeholder - needs email backend)
+function handleForgotPassword(e) {
+    e.preventDefault();
+    alert('Password reset feature requires email service setup. Contact admin for assistance.');
+}
+
+// Handle reset password (placeholder)
+function handleResetPassword(e) {
+    e.preventDefault();
+    alert('Password reset feature requires email service setup.');
+}
+
+// Handle login
+async function handleLogin(e) {
+    e.preventDefault();
     
-    const email = document.getElementById('login-email').value.trim().toLowerCase();
+    const email = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-password').value;
     
-    // Validate email domain
-    if (!isValidEmail(email)) {
-        showError('Please use your @eastdelta.edu.bd email address');
-        return;
+    // Validate email
+    if (!email.endsWith('@eastdelta.edu.bd')) {
+        return showError('Use your @eastdelta.edu.bd email');
     }
     
-    if (USE_LOCAL_STORAGE) {
-        // Demo mode - use localStorage
-        const users = JSON.parse(localStorage.getItem('edu_users')) || {};
-        const user = users[email];
-        
-        if (!user) {
-            showError('No account found with this email');
-            return;
-        }
-        
-        if (user.password !== password) {
-            showError('Incorrect password');
-            return;
-        }
-        
-        // Check role matches selected type
-        if (currentUserType === 'admin' && user.role !== 'admin') {
-            showError('This account does not have admin access');
-            return;
-        }
-        
-        if (currentUserType === 'student' && user.role === 'admin') {
-            showError('Please use Admin portal to login');
-            return;
-        }
-        
-        // Create session
-        const session = {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            role: user.role,
-            department: user.department
-        };
-        
-        localStorage.setItem('edu_session', JSON.stringify(session));
-        window.location.href = 'dashboard.html';
-        
-    } else {
-        // Production mode - use API
-        fetch(`${API_URL}/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password, userType: currentUserType })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                localStorage.setItem('edu_session', JSON.stringify(data.user));
-                localStorage.setItem('edu_token', data.token);
-                window.location.href = 'dashboard.html';
-            } else {
-                showError(data.message);
-            }
-        })
-        .catch(err => showError('Connection error. Please try again.'));
+    // Call API
+    const data = await api('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password, userType })
+    });
+    
+    if (data.error) {
+        return showError(data.error);
     }
+    
+    // Save session
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    
+    // Redirect
+    window.location.href = 'dashboard.html';
 }
 
-// Handle signup form submission
-function handleSignup(event) {
-    event.preventDefault();
+// Handle signup
+async function handleSignup(e) {
+    e.preventDefault();
     
-    const name = document.getElementById('signup-name').value.trim();
-    const studentId = document.getElementById('signup-studentid').value.trim();
-    const gender = document.getElementById('signup-gender').value;
-    const department = document.getElementById('signup-dept').value;
-    const semester = document.getElementById('signup-semester')?.value || '';
-    const email = document.getElementById('signup-email').value.trim().toLowerCase();
-    const password = document.getElementById('signup-password').value;
-    const confirm = document.getElementById('signup-confirm').value;
+    const form = {
+        name: document.getElementById('signup-name').value.trim(),
+        student_id: document.getElementById('signup-studentid').value.trim(),
+        gender: document.getElementById('signup-gender').value,
+        department: document.getElementById('signup-dept').value,
+        semester: document.getElementById('signup-semester')?.value || '',
+        email: document.getElementById('signup-email').value.trim(),
+        password: document.getElementById('signup-password').value,
+        confirm: document.getElementById('signup-confirm').value
+    };
     
     // Validations
-    if (!gender) {
-        showError('Please select your gender');
-        return;
+    if (!form.email.endsWith('@eastdelta.edu.bd')) {
+        return showError('Use your @eastdelta.edu.bd email');
+    }
+    if (form.password.length < 6) {
+        return showError('Password must be at least 6 characters');
+    }
+    if (form.password !== form.confirm) {
+        return showError('Passwords do not match');
     }
     
-    if (!isValidEmail(email)) {
-        showError('Only @eastdelta.edu.bd emails are allowed');
-        return;
+    // Call API
+    const data = await api('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(form)
+    });
+    
+    if (data.error) {
+        return showError(data.error);
     }
     
-    if (password.length < 6) {
-        showError('Password must be at least 6 characters');
-        return;
+    alert('Account created! Please login.');
+    showLoginForm();
+}
+
+/*
+ * ========================================
+ * COURSE FUNCTIONS
+ * ========================================
+ */
+
+// Load all courses
+async function loadCourses() {
+    return await api('/courses');
+}
+
+// Load user's enrolled courses
+async function loadEnrollments() {
+    return await api('/enrollments');
+}
+
+// Enroll in a course
+async function enrollCourse(courseId) {
+    const data = await api('/enrollments', {
+        method: 'POST',
+        body: JSON.stringify({ courseId })
+    });
+    
+    if (data.error) {
+        alert(data.error);
+        return false;
     }
     
-    if (password !== confirm) {
-        showError('Passwords do not match');
-        return;
-    }
+    alert('Enrolled successfully!');
+    return true;
+}
+
+// Unenroll from a course
+async function unenrollCourse(courseId) {
+    if (!confirm('Unenroll from this course?')) return false;
     
-    if (USE_LOCAL_STORAGE) {
-        // Demo mode
-        let users = JSON.parse(localStorage.getItem('edu_users')) || {};
-        
-        if (users[email]) {
-            showError('An account with this email already exists');
-            return;
-        }
-        
-        // Create new user
-        users[email] = {
-            id: studentId,
-            name: name,
-            email: email,
-            password: password,
-            role: 'student',
-            department: department,
-            gender: gender,
-            semester: semester,
-            profilePic: null
-        };
-        
-        localStorage.setItem('edu_users', JSON.stringify(users));
-        alert('Account created successfully! Please login.');
-        showLoginForm();
-        
-    } else {
-        // Production mode - use API
-        fetch(`${API_URL}/auth/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, studentId, email, password, department, gender, semester })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                alert('Account created successfully! Please login.');
-                showLoginForm();
-            } else {
-                showError(data.message);
-            }
-        })
-        .catch(err => showError('Connection error. Please try again.'));
-    }
+    await api(`/enrollments/${courseId}`, { method: 'DELETE' });
+    alert('Unenrolled');
+    return true;
 }
 
-// Logout function
-function logout() {
-    localStorage.removeItem('edu_session');
-    localStorage.removeItem('edu_token');
-    window.location.href = 'index.html';
+// Delete a course (Admin)
+async function deleteCourse(courseId) {
+    if (!confirm('Delete this course?')) return false;
+    
+    await api(`/courses/${courseId}`, { method: 'DELETE' });
+    alert('Course deleted');
+    return true;
 }
 
-// Check if user is logged in (for protected pages)
-function checkAuth() {
-    const session = localStorage.getItem('edu_session');
-    if (!session) {
-        window.location.href = 'index.html';
-        return null;
-    }
-    return JSON.parse(session);
+// Create a course (Admin)
+async function createCourse(code, title, dept, instructor) {
+    return await api('/courses', {
+        method: 'POST',
+        body: JSON.stringify({ code, title, department: dept, instructor })
+    });
 }
 
-// Get current user
-function getCurrentUser() {
-    const session = localStorage.getItem('edu_session');
-    return session ? JSON.parse(session) : null;
+/*
+ * ========================================
+ * FILE FUNCTIONS
+ * ========================================
+ */
+
+// Load files for a course
+async function loadCourseFiles(courseId) {
+    return await api(`/files/${courseId}`);
 }
 
+// Load pending files (Admin)
+async function loadPendingFiles() {
+    return await api('/files/pending/all');
+}
 
-/* =============================================
-   NAVIGATION & UI FUNCTIONS
-   ============================================= */
+// Approve a file (Admin)
+async function approveFile(fileId) {
+    const data = await api(`/files/${fileId}/approve`, { method: 'PUT' });
+    return !data.error;
+}
+
+// Reject a file (Admin)
+async function rejectFile(fileId) {
+    if (!confirm('Reject and delete this file?')) return false;
+    
+    const data = await api(`/files/${fileId}/reject`, { method: 'DELETE' });
+    return !data.error;
+}
+
+// Delete a file
+async function deleteFile(fileId) {
+    if (!confirm('Delete this file?')) return false;
+    
+    await api(`/files/${fileId}`, { method: 'DELETE' });
+    return true;
+}
+
+// Get file icon based on extension
+function getFileIcon(filename) {
+    const ext = filename.split('.').pop().toLowerCase();
+    
+    const icons = {
+        pdf: { class: 'pdf', icon: 'fa-file-pdf' },
+        doc: { class: 'doc', icon: 'fa-file-word' },
+        docx: { class: 'doc', icon: 'fa-file-word' },
+        ppt: { class: 'ppt', icon: 'fa-file-powerpoint' },
+        pptx: { class: 'ppt', icon: 'fa-file-powerpoint' },
+        xls: { class: 'xls', icon: 'fa-file-excel' },
+        xlsx: { class: 'xls', icon: 'fa-file-excel' },
+        jpg: { class: 'image', icon: 'fa-file-image' },
+        jpeg: { class: 'image', icon: 'fa-file-image' },
+        png: { class: 'image', icon: 'fa-file-image' },
+        zip: { class: 'zip', icon: 'fa-file-archive' },
+        rar: { class: 'zip', icon: 'fa-file-archive' }
+    };
+    
+    return icons[ext] || { class: 'default', icon: 'fa-file' };
+}
+
+/*
+ * ========================================
+ * UI FUNCTIONS
+ * ========================================
+ */
+
+// Load header with user info
+function loadHeader() {
+    const user = getUser();
+    if (!user) return;
+    
+    const nameEl = document.getElementById('user-name');
+    const roleEl = document.getElementById('user-role');
+    
+    if (nameEl) nameEl.textContent = user.name;
+    if (roleEl) roleEl.textContent = user.role === 'admin' ? 'Admin' : 'Student';
+}
 
 // Load sidebar navigation
 function loadSidebar(activePage) {
-    const user = getCurrentUser();
-    const isAdmin = user && user.role === 'admin';
-    
+    const user = getUser();
+    const isAdmin = user?.role === 'admin';
     const sidebar = document.querySelector('.sidebar');
+    
     if (!sidebar) return;
     
     sidebar.innerHTML = `
@@ -317,12 +401,12 @@ function loadSidebar(activePage) {
             <div class="nav-divider"></div>
             <li>
                 <a href="settings.html" class="${activePage === 'settings' ? 'active' : ''}">
-                    <i class="fas fa-cog"></i> Account Settings
+                    <i class="fas fa-cog"></i> Settings
                 </a>
             </li>
             <li>
                 <a href="#" onclick="logout()">
-                    <i class="fas fa-sign-out-alt" style="color: var(--danger)"></i> 
+                    <i class="fas fa-sign-out-alt" style="color: var(--danger)"></i>
                     <span style="color: var(--danger)">Logout</span>
                 </a>
             </li>
@@ -330,300 +414,33 @@ function loadSidebar(activePage) {
     `;
 }
 
-// Load header with user info and profile picture
-function loadHeader() {
-    const user = getCurrentUser();
-    if (!user) return;
+// Open modal
+function openModal(id) {
+    document.getElementById(id)?.classList.add('active');
+}
+
+// Close modal
+function closeModal(id) {
+    document.getElementById(id)?.classList.remove('active');
+}
+
+// Close modal on outside click
+window.onclick = (e) => {
+    if (e.target.classList.contains('modal')) {
+        e.target.classList.remove('active');
+    }
+};
+
+// Toggle password visibility
+function togglePassword(inputId, btn) {
+    const input = document.getElementById(inputId);
+    const icon = btn.querySelector('i');
     
-    const userNameEl = document.getElementById('user-name');
-    const userRoleEl = document.getElementById('user-role');
-    
-    if (userNameEl) userNameEl.textContent = user.name;
-    if (userRoleEl) userRoleEl.textContent = user.role;
-    
-    // Get full user data for profile pic
-    const users = JSON.parse(localStorage.getItem('edu_users')) || {};
-    const fullUser = users[user.email];
-    
-    // Update profile avatar
-    const avatarEl = document.getElementById('profile-avatar');
-    if (avatarEl && fullUser) {
-        if (fullUser.profilePic) {
-            avatarEl.innerHTML = `<img src="${fullUser.profilePic}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-        } else {
-            // Show gender-based icon
-            const icon = fullUser.gender === 'female' ? 'fa-user-circle' : 'fa-user-circle';
-            const color = fullUser.gender === 'female' ? '#9c5c7a' : '#5c6b7a';
-            avatarEl.innerHTML = `<i class="fas ${icon}" style="font-size: 24px; color: ${color};"></i>`;
-        }
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
     }
 }
-
-
-/* =============================================
-   COURSE FUNCTIONS
-   ============================================= */
-
-// Initialize sample courses (for demo)
-function initializeCourses() {
-    let courses = JSON.parse(localStorage.getItem('edu_courses'));
-    
-    if (!courses) {
-        courses = [
-            { id: 1, code: 'CSE 101', title: 'Introduction to Programming', dept: 'CSE', instructor: 'Dr. Rahman' },
-            { id: 2, code: 'CSE 201', title: 'Data Structures', dept: 'CSE', instructor: 'Dr. Ahmed' },
-            { id: 3, code: 'CSE 301', title: 'Database Systems', dept: 'CSE', instructor: 'Dr. Khan' },
-            { id: 4, code: 'EEE 101', title: 'Basic Electrical Engineering', dept: 'EEE', instructor: 'Dr. Hossain' },
-            { id: 5, code: 'BBA 101', title: 'Principles of Management', dept: 'BBA', instructor: 'Dr. Karim' }
-        ];
-        localStorage.setItem('edu_courses', JSON.stringify(courses));
-    }
-    
-    return courses;
-}
-
-// Get all courses
-function getCourses(deptFilter = 'All') {
-    const courses = JSON.parse(localStorage.getItem('edu_courses')) || [];
-    
-    if (deptFilter === 'All') {
-        return courses;
-    }
-    
-    return courses.filter(c => c.dept === deptFilter);
-}
-
-// Get enrolled courses for current user
-function getEnrolledCourses() {
-    const user = getCurrentUser();
-    if (!user) return [];
-    
-    const enrollments = JSON.parse(localStorage.getItem('edu_enrollments')) || {};
-    return enrollments[user.email] || [];
-}
-
-// Enroll in a course
-function enrollInCourse(courseId) {
-    const user = getCurrentUser();
-    if (!user) return;
-    
-    const courses = JSON.parse(localStorage.getItem('edu_courses')) || [];
-    const course = courses.find(c => c.id === courseId);
-    
-    if (!course) return;
-    
-    let enrollments = JSON.parse(localStorage.getItem('edu_enrollments')) || {};
-    
-    if (!enrollments[user.email]) {
-        enrollments[user.email] = [];
-    }
-    
-    // Check if already enrolled
-    if (enrollments[user.email].some(c => c.id === courseId)) {
-        alert('You are already enrolled in this course');
-        return;
-    }
-    
-    enrollments[user.email].push(course);
-    localStorage.setItem('edu_enrollments', JSON.stringify(enrollments));
-    
-    alert(`Enrolled in ${course.code}: ${course.title}`);
-    
-    // Refresh page
-    if (typeof loadDashboard === 'function') {
-        loadDashboard();
-    }
-}
-
-// Unenroll from a course
-function unenrollFromCourse(courseId) {
-    if (!confirm('Are you sure you want to unenroll from this course?')) return;
-    
-    const user = getCurrentUser();
-    if (!user) return;
-    
-    let enrollments = JSON.parse(localStorage.getItem('edu_enrollments')) || {};
-    
-    if (enrollments[user.email]) {
-        enrollments[user.email] = enrollments[user.email].filter(c => c.id !== courseId);
-        localStorage.setItem('edu_enrollments', JSON.stringify(enrollments));
-    }
-    
-    alert('Successfully unenrolled from course');
-    
-    // Refresh
-    if (typeof loadMyCourses === 'function') {
-        loadMyCourses();
-    }
-}
-
-// Create a new course (Admin only)
-function createCourse(code, title, dept, instructor) {
-    let courses = JSON.parse(localStorage.getItem('edu_courses')) || [];
-    
-    const newCourse = {
-        id: Date.now(),
-        code: code,
-        title: title,
-        dept: dept,
-        instructor: instructor
-    };
-    
-    courses.push(newCourse);
-    localStorage.setItem('edu_courses', JSON.stringify(courses));
-    
-    return newCourse;
-}
-
-// Delete a course (Admin only)
-function deleteCourse(courseId) {
-    if (!confirm('Are you sure you want to delete this course?')) return;
-    
-    let courses = JSON.parse(localStorage.getItem('edu_courses')) || [];
-    courses = courses.filter(c => c.id !== courseId);
-    localStorage.setItem('edu_courses', JSON.stringify(courses));
-    
-    // Also remove files for this course
-    let files = JSON.parse(localStorage.getItem('edu_files')) || [];
-    files = files.filter(f => f.courseId !== courseId);
-    localStorage.setItem('edu_files', JSON.stringify(files));
-    
-    alert('Course deleted');
-    
-    if (typeof loadDashboard === 'function') {
-        loadDashboard();
-    }
-}
-
-
-/* =============================================
-   FILE FUNCTIONS
-   ============================================= */
-
-// Get files for a course
-function getCourseFiles(courseId, onlyApproved = true) {
-    const files = JSON.parse(localStorage.getItem('edu_files')) || [];
-    
-    return files.filter(f => {
-        if (f.courseId !== courseId) return false;
-        if (onlyApproved && f.status !== 'approved') return false;
-        return true;
-    });
-}
-
-// Get all pending files (for admin)
-function getPendingFiles() {
-    const files = JSON.parse(localStorage.getItem('edu_files')) || [];
-    return files.filter(f => f.status === 'pending');
-}
-
-// Upload a file
-function uploadFile(courseId, fileName, fileSize) {
-    const user = getCurrentUser();
-    if (!user) return;
-    
-    let files = JSON.parse(localStorage.getItem('edu_files')) || [];
-    
-    const newFile = {
-        id: Date.now(),
-        courseId: courseId,
-        name: fileName,
-        size: fileSize,
-        uploadedBy: user.name,
-        uploadedByEmail: user.email,
-        uploadDate: new Date().toLocaleDateString(),
-        status: user.role === 'admin' ? 'approved' : 'pending'
-    };
-    
-    files.push(newFile);
-    localStorage.setItem('edu_files', JSON.stringify(files));
-    
-    return newFile;
-}
-
-// Approve a file (Admin)
-function approveFile(fileId) {
-    let files = JSON.parse(localStorage.getItem('edu_files')) || [];
-    
-    const fileIndex = files.findIndex(f => f.id === fileId);
-    if (fileIndex > -1) {
-        files[fileIndex].status = 'approved';
-        localStorage.setItem('edu_files', JSON.stringify(files));
-    }
-    
-    if (typeof loadAdminPanel === 'function') {
-        loadAdminPanel();
-    }
-}
-
-// Reject/Delete a file (Admin)
-function rejectFile(fileId) {
-    if (!confirm('Are you sure you want to reject and delete this file?')) return;
-    
-    let files = JSON.parse(localStorage.getItem('edu_files')) || [];
-    files = files.filter(f => f.id !== fileId);
-    localStorage.setItem('edu_files', JSON.stringify(files));
-    
-    if (typeof loadAdminPanel === 'function') {
-        loadAdminPanel();
-    }
-}
-
-// Delete a file
-function deleteFile(fileId) {
-    if (!confirm('Are you sure you want to delete this file?')) return;
-    
-    let files = JSON.parse(localStorage.getItem('edu_files')) || [];
-    files = files.filter(f => f.id !== fileId);
-    localStorage.setItem('edu_files', JSON.stringify(files));
-    
-    alert('File deleted successfully');
-    
-    if (typeof loadCourseFiles === 'function') {
-        loadCourseFiles();
-    }
-}
-
-// Get file icon based on extension
-function getFileIcon(fileName) {
-    const ext = fileName.split('.').pop().toLowerCase();
-    
-    switch(ext) {
-        case 'pdf':
-            return { class: 'pdf', icon: 'fa-file-pdf' };
-        case 'doc':
-        case 'docx':
-            return { class: 'doc', icon: 'fa-file-word' };
-        case 'jpg':
-        case 'jpeg':
-        case 'png':
-        case 'gif':
-            return { class: 'image', icon: 'fa-file-image' };
-        case 'ppt':
-        case 'pptx':
-            return { class: 'doc', icon: 'fa-file-powerpoint' };
-        default:
-            return { class: 'default', icon: 'fa-file' };
-    }
-}
-
-
-/* =============================================
-   MODAL FUNCTIONS
-   ============================================= */
-
-function openModal(modalId) {
-    document.getElementById(modalId).classList.add('active');
-}
-
-function closeModal(modalId) {
-    document.getElementById(modalId).classList.remove('active');
-}
-
-// Close modal when clicking outside
-window.onclick = function(event) {
-    if (event.target.classList.contains('modal')) {
-        event.target.classList.remove('active');
-    }
-}
-

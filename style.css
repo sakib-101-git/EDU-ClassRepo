@@ -42,8 +42,8 @@
     --course-eee: #6b7a5c;      /* Sage green */
     --course-bba: #7a6b5c;      /* Warm taupe */
     --course-eng: #5c7a7a;      /* Teal gray */
-    --course-law: #7a5c6b;      /* Dusty mauve */
-    --course-pha: #6b5c7a;      /* Muted purple */
+    --course-eco: #7a705c;      /* Warm bronze */
+    --course-ged: #6b6b7a;      /* Cool gray */
     
     /* Shadows */
     --shadow-sm: 0 2px 8px rgba(60, 30, 30, 0.06);
@@ -491,8 +491,8 @@ body::before {
 .course-eee { --card-color: var(--course-eee); }
 .course-bba { --card-color: var(--course-bba); }
 .course-eng { --card-color: var(--course-eng); }
-.course-law { --card-color: var(--course-law); }
-.course-pha { --card-color: var(--course-pha); }
+.course-eco { --card-color: var(--course-eco); }
+.course-ged { --card-color: var(--course-ged); }
 
 /* =============================================
    FILE LIST

@@ -20,7 +20,7 @@
                     <div class="user-name" id="user-name">Loading...</div>
                     <div class="user-role" id="user-role">-</div>
                 </div>
-                <a href="settings.html" class="profile-avatar" id="profile-avatar" title="Account Settings">
+                <a href="settings.html" class="profile-avatar" title="Settings">
                     <i class="fas fa-user-circle" style="font-size: 24px; color: #5c6b7a;"></i>
                 </a>
             </div>
@@ -35,7 +35,6 @@
                 <div class="page-header">
                     <h1 class="page-title">My Enrolled Courses</h1>
                     <div class="filter-controls">
-                        <!-- Search Box -->
                         <div class="search-box">
                             <i class="fas fa-search search-icon"></i>
                             <input type="text" class="search-input" id="search-input" 
@@ -45,56 +44,76 @@
                 </div>
 
                 <!-- Course Grid -->
-                <div class="course-grid" id="course-grid"></div>
+                <div class="course-grid" id="course-grid">
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <h3>Loading courses...</h3>
+                    </div>
+                </div>
             </main>
         </div>
     </div>
 
     <script src="app.js"></script>
     <script>
-        const user = checkAuth();
+        /*
+         * My Courses Page Script
+         */
         
-        if (user && user.role === 'admin') {
+        const user = checkAuth();
+        let myCourses = [];
+        
+        // Redirect admin to dashboard
+        if (user?.role === 'admin') {
             window.location.href = 'dashboard.html';
         }
         
+        // Department color classes
         const deptColors = {
             'CSE': 'course-cse',
             'EEE': 'course-eee',
             'BBA': 'course-bba',
             'ENG': 'course-eng',
-            'LAW': 'course-law',
-            'PHA': 'course-pha'
+            'ECO': 'course-eco',
+            'GED': 'course-ged'
         };
 
-        document.addEventListener('DOMContentLoaded', function() {
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', async () => {
             loadHeader();
             loadSidebar('my-courses');
-            loadMyCourses();
+            await loadMyCourses();
         });
 
-        function loadMyCourses() {
+        // Load enrolled courses from API
+        async function loadMyCourses() {
+            myCourses = await loadEnrollments();
+            renderCourses();
+        }
+
+        // Render course cards
+        function renderCourses() {
             const searchTerm = document.getElementById('search-input')?.value.toLowerCase() || '';
-            let courses = getEnrolledCourses();
+            let courses = myCourses;
             
             // Apply search filter
             if (searchTerm) {
                 courses = courses.filter(c => 
                     c.code.toLowerCase().includes(searchTerm) ||
-                    c.title.toLowerCase().includes(searchTerm) ||
-                    (c.instructor && c.instructor.toLowerCase().includes(searchTerm))
+                    c.title.toLowerCase().includes(searchTerm)
                 );
             }
             
             const grid = document.getElementById('course-grid');
             
+            // Show empty state
             if (courses.length === 0) {
                 const isSearching = searchTerm.length > 0;
                 grid.innerHTML = `
                     <div class="empty-state" style="grid-column: 1/-1;">
                         <i class="fas fa-${isSearching ? 'search' : 'book'}"></i>
                         <h3>${isSearching ? 'No matching courses' : 'No courses enrolled'}</h3>
-                        <p>${isSearching ? 'Try a different search term.' : 'You haven\'t enrolled in any courses yet.'}</p>
+                        <p>${isSearching ? 'Try a different search.' : 'You haven\'t enrolled in any courses yet.'}</p>
                         ${!isSearching ? `
                             <a href="dashboard.html" class="btn btn-primary mt-20">
                                 <i class="fas fa-search"></i> Browse Courses
@@ -105,9 +124,9 @@
                 return;
             }
             
+            // Render course cards
             grid.innerHTML = courses.map(course => {
-                const fileCount = getCourseFiles(course.id).length;
-                const colorClass = deptColors[course.dept] || '';
+                const colorClass = deptColors[course.department] || '';
                 
                 return `
                     <div class="course-card ${colorClass}" onclick="window.location.href='course.html?id=${course.id}'">
@@ -116,14 +135,13 @@
                             <span><i class="fas fa-user-tie"></i> ${course.instructor || 'TBA'}</span>
                         </div>
                         <div class="card-body">
-                            <p><i class="fas fa-file-alt"></i> ${fileCount} file${fileCount !== 1 ? 's' : ''} available</p>
                             <p style="color: var(--text-light); font-size: 13px;">
                                 <i class="fas fa-mouse-pointer"></i> Click to view files
                             </p>
                         </div>
                         <div class="card-footer">
-                            <span><i class="fas fa-building"></i> ${course.dept}</span>
-                            <button class="btn btn-outline btn-small" onclick="event.stopPropagation(); unenrollFromCourse(${course.id})">
+                            <span><i class="fas fa-building"></i> ${course.department}</span>
+                            <button class="btn btn-outline btn-small" onclick="event.stopPropagation(); handleUnenroll(${course.id})">
                                 <i class="fas fa-minus"></i> Unenroll
                             </button>
                         </div>
@@ -132,8 +150,16 @@
             }).join('');
         }
 
+        // Search courses
         function searchCourses() {
-            loadMyCourses();
+            renderCourses();
+        }
+
+        // Handle unenroll
+        async function handleUnenroll(courseId) {
+            if (await unenrollCourse(courseId)) {
+                await loadMyCourses();
+            }
         }
     </script>
 </body>

@@ -20,7 +20,7 @@
                     <div class="user-name" id="user-name">Loading...</div>
                     <div class="user-role" id="user-role">-</div>
                 </div>
-                <a href="settings.html" class="profile-avatar" id="profile-avatar" title="Account Settings">
+                <a href="settings.html" class="profile-avatar" title="Settings">
                     <i class="fas fa-user-circle" style="font-size: 24px; color: #5c6b7a;"></i>
                 </a>
             </div>
@@ -35,7 +35,6 @@
                 <div class="page-header">
                     <h1 class="page-title">Available Courses</h1>
                     <div class="filter-controls">
-                        <!-- Search Box -->
                         <div class="search-box">
                             <i class="fas fa-search search-icon"></i>
                             <input type="text" class="search-input" id="search-input" 
@@ -48,8 +47,8 @@
                             <option value="EEE">EEE</option>
                             <option value="BBA">BBA</option>
                             <option value="ENG">English</option>
-                            <option value="LAW">Law</option>
-                            <option value="PHA">Pharmacy</option>
+                            <option value="ECO">Economics</option>
+                            <option value="GED">General Education</option>
                         </select>
                         
                         <button class="btn btn-primary hidden" id="create-course-btn" onclick="openModal('create-course-modal')">
@@ -59,7 +58,12 @@
                 </div>
 
                 <!-- Course Grid -->
-                <div class="course-grid" id="course-grid"></div>
+                <div class="course-grid" id="course-grid">
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <h3>Loading courses...</h3>
+                    </div>
+                </div>
             </main>
         </div>
     </div>
@@ -89,8 +93,8 @@
                                 <option value="EEE">EEE</option>
                                 <option value="BBA">BBA</option>
                                 <option value="ENG">English</option>
-                                <option value="LAW">Law</option>
-                                <option value="PHA">Pharmacy</option>
+                                <option value="ECO">Economics</option>
+                                <option value="GED">General Education</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -106,62 +110,83 @@
 
     <script src="app.js"></script>
     <script>
-        const user = checkAuth();
+        /*
+         * Dashboard Page Script
+         */
         
+        const user = checkAuth();
+        let allCourses = [];
+        let enrolledCourses = [];
+        
+        // Department color classes
         const deptColors = {
             'CSE': 'course-cse',
             'EEE': 'course-eee',
             'BBA': 'course-bba',
             'ENG': 'course-eng',
-            'LAW': 'course-law',
-            'PHA': 'course-pha'
+            'ECO': 'course-eco',
+            'GED': 'course-ged'
         };
 
-        document.addEventListener('DOMContentLoaded', function() {
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', async () => {
             loadHeader();
             loadSidebar('dashboard');
-            initializeCourses();
-            loadDashboard();
             
-            if (user && user.role === 'admin') {
+            // Show create button for admin
+            if (user?.role === 'admin') {
                 document.getElementById('create-course-btn').classList.remove('hidden');
             }
+            
+            await loadDashboard();
         });
 
-        function loadDashboard() {
+        // Load courses from API
+        async function loadDashboard() {
+            allCourses = await loadCourses();
+            enrolledCourses = await loadEnrollments();
+            renderCourses();
+        }
+
+        // Render course cards
+        function renderCourses() {
             const deptFilter = document.getElementById('dept-filter').value;
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
-            let courses = getCourses(deptFilter);
+            
+            let courses = allCourses;
+            
+            // Apply department filter
+            if (deptFilter !== 'All') {
+                courses = courses.filter(c => c.department === deptFilter);
+            }
             
             // Apply search filter
             if (searchTerm) {
                 courses = courses.filter(c => 
                     c.code.toLowerCase().includes(searchTerm) ||
-                    c.title.toLowerCase().includes(searchTerm) ||
-                    (c.instructor && c.instructor.toLowerCase().includes(searchTerm))
+                    c.title.toLowerCase().includes(searchTerm)
                 );
             }
             
-            const enrolledCourses = getEnrolledCourses();
-            const isAdmin = user && user.role === 'admin';
-            
             const grid = document.getElementById('course-grid');
+            const isAdmin = user?.role === 'admin';
             
+            // Show empty state
             if (courses.length === 0) {
                 grid.innerHTML = `
                     <div class="empty-state" style="grid-column: 1/-1;">
                         <i class="fas fa-search"></i>
                         <h3>No courses found</h3>
-                        <p>Try a different search term or department filter.</p>
+                        <p>Try a different search or filter.</p>
                     </div>
                 `;
                 return;
             }
             
+            // Render course cards
             grid.innerHTML = courses.map(course => {
                 const isEnrolled = enrolledCourses.some(c => c.id === course.id);
-                const fileCount = getCourseFiles(course.id).length;
-                const colorClass = deptColors[course.dept] || '';
+                const colorClass = deptColors[course.department] || '';
                 
                 return `
                     <div class="course-card ${colorClass}">
@@ -170,51 +195,70 @@
                             <span><i class="fas fa-user-tie"></i> ${course.instructor || 'TBA'}</span>
                         </div>
                         <div class="card-body">
-                            <p><i class="fas fa-file-alt"></i> ${fileCount} file${fileCount !== 1 ? 's' : ''} available</p>
                             ${isAdmin ? `
-                                <button class="btn btn-danger btn-small" onclick="event.stopPropagation(); deleteCourse(${course.id})">
-                                    <i class="fas fa-trash"></i> Delete Course
+                                <button class="btn btn-danger btn-small" onclick="handleDelete(${course.id})">
+                                    <i class="fas fa-trash"></i> Delete
                                 </button>
                             ` : `
                                 ${isEnrolled ? `
-                                    <a href="course.html?id=${course.id}" class="btn btn-secondary btn-small" onclick="event.stopPropagation();">
-                                        <i class="fas fa-folder-open"></i> Open Course
+                                    <a href="course.html?id=${course.id}" class="btn btn-secondary btn-small">
+                                        <i class="fas fa-folder-open"></i> Open
                                     </a>
                                 ` : `
-                                    <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); enrollInCourse(${course.id})">
-                                        <i class="fas fa-plus"></i> Enroll Now
+                                    <button class="btn btn-primary btn-small" onclick="handleEnroll(${course.id})">
+                                        <i class="fas fa-plus"></i> Enroll
                                     </button>
                                 `}
                             `}
                         </div>
                         <div class="card-footer">
-                            <span><i class="fas fa-building"></i> ${course.dept}</span>
-                            <span>${isEnrolled ? '<i class="fas fa-check-circle text-success"></i> Enrolled' : ''}</span>
+                            <span><i class="fas fa-building"></i> ${course.department}</span>
+                            ${isEnrolled ? '<span class="text-success"><i class="fas fa-check-circle"></i> Enrolled</span>' : ''}
                         </div>
                     </div>
                 `;
             }).join('');
         }
 
+        // Filter courses
         function filterCourses() {
-            loadDashboard();
+            renderCourses();
         }
 
-        function handleCreateCourse(event) {
-            event.preventDefault();
+        // Handle enrollment
+        async function handleEnroll(courseId) {
+            if (await enrollCourse(courseId)) {
+                await loadDashboard();
+            }
+        }
+
+        // Handle delete (Admin)
+        async function handleDelete(courseId) {
+            if (await deleteCourse(courseId)) {
+                await loadDashboard();
+            }
+        }
+
+        // Handle create course (Admin)
+        async function handleCreateCourse(e) {
+            e.preventDefault();
             
             const code = document.getElementById('course-code').value;
             const title = document.getElementById('course-title').value;
             const dept = document.getElementById('course-dept').value;
             const instructor = document.getElementById('course-instructor').value;
             
-            createCourse(code, title, dept, instructor);
+            const result = await createCourse(code, title, dept, instructor);
+            
+            if (result.error) {
+                alert('Error: ' + result.error);
+                return;
+            }
             
             closeModal('create-course-modal');
             document.getElementById('create-course-form').reset();
-            loadDashboard();
-            
-            alert('Course created successfully!');
+            await loadDashboard();
+            alert('Course created!');
         }
     </script>
 </body>

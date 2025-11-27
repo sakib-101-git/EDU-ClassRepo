@@ -41,6 +41,7 @@
             color: white;
             padding: 8px 16px;
             font-size: 13px;
+            border-radius: 8px;
             position: relative;
         }
         
@@ -74,7 +75,7 @@
                     <div class="user-name" id="user-name">Loading...</div>
                     <div class="user-role" id="user-role">-</div>
                 </div>
-                <a href="settings.html" class="profile-avatar" id="profile-avatar" title="Account Settings">
+                <a href="settings.html" class="profile-avatar" title="Settings">
                     <i class="fas fa-user-circle" style="font-size: 24px; color: #5c6b7a;"></i>
                 </a>
             </div>
@@ -93,37 +94,66 @@
 
                 <!-- Pending Files List -->
                 <div class="file-list" id="pending-list">
-                    <!-- Files will be loaded here -->
+                    <div class="empty-state">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <h3>Loading...</h3>
+                    </div>
                 </div>
             </main>
         </div>
     </div>
 
+    <!-- Rename Modal -->
+    <div class="modal" id="rename-modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3>Rename File</h3>
+                <button class="modal-close" onclick="closeModal('rename-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="rename-form" onsubmit="handleRename(event)">
+                    <div class="form-group">
+                        <label>New File Name</label>
+                        <input type="text" class="form-input" id="new-file-name" required>
+                        <input type="hidden" id="rename-file-id">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        <i class="fas fa-save"></i> Save Name
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
     <script>
-        // Check authentication
+        /*
+         * Admin Panel Script
+         */
+        
         const user = checkAuth();
         
         // Redirect non-admin users
-        if (user && user.role !== 'admin') {
+        if (user?.role !== 'admin') {
             window.location.href = 'dashboard.html';
         }
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', async () => {
             loadHeader();
             loadSidebar('admin');
-            loadAdminPanel();
+            await loadAdminPanel();
         });
 
-        // Load pending files
-        function loadAdminPanel() {
-            const files = getPendingFiles();
+        // Load pending files from API
+        async function loadAdminPanel() {
+            const files = await loadPendingFiles();
             const fileList = document.getElementById('pending-list');
             
-            document.getElementById('pending-count').textContent = `${files.length} pending`;
+            document.getElementById('pending-count').textContent = 
+                `${files.length || 0} pending`;
             
-            if (files.length === 0) {
+            if (!files || files.length === 0) {
                 fileList.innerHTML = `
                     <div class="empty-state">
                         <i class="fas fa-check-circle" style="color: var(--success);"></i>
@@ -134,14 +164,9 @@
                 return;
             }
             
-            // Get course info for each file
-            const courses = JSON.parse(localStorage.getItem('edu_courses')) || [];
-            
             fileList.innerHTML = files.map(file => {
-                const icon = getFileIcon(file.name);
-                const course = courses.find(c => c.id === file.courseId);
-                const courseName = course ? `${course.code}: ${course.title}` : 'Unknown Course';
-                const courseDept = course ? course.dept : '';
+                const icon = getFileIcon(file.file_name);
+                const size = file.file_size ? (file.file_size / 1024).toFixed(1) + ' KB' : '';
                 
                 return `
                     <div class="file-item">
@@ -149,20 +174,29 @@
                             <i class="fas ${icon.icon}"></i>
                         </div>
                         <div class="file-info">
-                            <div class="file-name">${file.name}</div>
+                            <div class="file-name">${file.file_name}</div>
                             <div class="file-meta">
-                                Uploaded by <strong>${file.uploadedBy}</strong> • ${file.uploadDate} • ${file.size}
+                                Uploaded by <strong>${file.uploader_name}</strong> • ${size}
                             </div>
                             <div class="course-tag">
-                                <i class="fas fa-book"></i> ${courseName} (${courseDept})
+                                <i class="fas fa-book"></i> ${file.course_code}: ${file.course_title}
                             </div>
                         </div>
                         <div class="approval-actions">
+                            <a href="/uploads/${file.file_path}" target="_blank" class="btn btn-secondary btn-small" title="View File">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="/uploads/${file.file_path}" download class="btn btn-secondary btn-small" title="Download File">
+                                <i class="fas fa-download"></i>
+                            </a>
+                            <button class="btn btn-secondary btn-small" onclick="openRenameModal(${file.id}, '${file.file_name.replace(/'/g, "\\'")}')" title="Rename File">
+                                <i class="fas fa-edit"></i>
+                            </button>
                             <button class="btn btn-success btn-small" onclick="handleApprove(${file.id})">
-                                <i class="fas fa-check"></i> Approve
+                                <i class="fas fa-check"></i>
                             </button>
                             <button class="btn btn-danger btn-small" onclick="handleReject(${file.id})">
-                                <i class="fas fa-times"></i> Reject
+                                <i class="fas fa-times"></i>
                             </button>
                         </div>
                     </div>
@@ -171,14 +205,53 @@
         }
         
         // Handle approve
-        function handleApprove(fileId) {
-            approveFile(fileId);
-            alert('File approved successfully!');
+        async function handleApprove(fileId) {
+            if (await approveFile(fileId)) {
+                alert('File approved!');
+                await loadAdminPanel();
+            }
         }
         
         // Handle reject
-        function handleReject(fileId) {
-            rejectFile(fileId);
+        async function handleReject(fileId) {
+            if (await rejectFile(fileId)) {
+                alert('File rejected');
+                await loadAdminPanel();
+            }
+        }
+
+        // Open rename modal
+        function openRenameModal(fileId, fileName) {
+            document.getElementById('rename-file-id').value = fileId;
+            document.getElementById('new-file-name').value = fileName;
+            openModal('rename-modal');
+        }
+
+        // Handle rename
+        async function handleRename(e) {
+            e.preventDefault();
+            
+            const fileId = document.getElementById('rename-file-id').value;
+            const newName = document.getElementById('new-file-name').value.trim();
+            
+            if (!newName) {
+                alert('Please enter a file name');
+                return;
+            }
+            
+            const result = await api(`/files/${fileId}/rename`, {
+                method: 'PUT',
+                body: JSON.stringify({ newName })
+            });
+            
+            if (result.error) {
+                alert('Error: ' + result.error);
+                return;
+            }
+            
+            closeModal('rename-modal');
+            alert('File renamed!');
+            await loadAdminPanel();
         }
     </script>
 </body>

@@ -563,8 +563,7 @@
                             <option value="EEE">EEE</option>
                             <option value="BBA">BBA</option>
                             <option value="ENG">English</option>
-                            <option value="LAW">Law</option>
-                            <option value="PHA">Pharmacy</option>
+                            <option value="ECO">Economics</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -579,6 +578,10 @@
                             <option value="6">6th</option>
                             <option value="7">7th</option>
                             <option value="8">8th</option>
+                            <option value="9">9th</option>
+                            <option value="10">10th</option>
+                            <option value="11">11th</option>
+                            <option value="12">12th</option>
                         </select>
                     </div>
                 </div>
@@ -683,95 +686,9 @@
 
     <script src="app.js"></script>
     <script>
-        initializeAdmins();
-        
-        const session = localStorage.getItem('edu_session');
-        if (session) {
+        // Redirect if already logged in
+        if (isLoggedIn()) {
             window.location.href = 'dashboard.html';
-        }
-
-        // Toggle password visibility
-        function togglePassword(inputId, btn) {
-            const input = document.getElementById(inputId);
-            const icon = btn.querySelector('i');
-            
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            } else {
-                input.type = 'password';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-            }
-        }
-
-        // Show forgot password form
-        function showForgotPassword() {
-            document.getElementById('login-form').classList.add('hidden');
-            document.getElementById('signup-form').classList.add('hidden');
-            document.getElementById('forgot-form').classList.remove('hidden');
-            document.getElementById('reset-form').classList.add('hidden');
-            document.getElementById('login-footer').classList.add('hidden');
-            document.getElementById('signup-footer').classList.add('hidden');
-            document.getElementById('login-toggle').classList.add('hidden');
-            document.getElementById('admin-notice').classList.add('hidden');
-            document.getElementById('form-title').textContent = 'Forgot Password';
-            document.getElementById('form-subtitle').textContent = 'Enter your email to reset password';
-            document.getElementById('error-message').classList.add('hidden');
-        }
-
-        // Handle forgot password
-        let resetEmail = '';
-        function handleForgotPassword(event) {
-            event.preventDefault();
-            resetEmail = document.getElementById('forgot-email').value.toLowerCase();
-            
-            // Check if email exists
-            const users = JSON.parse(localStorage.getItem('edu_users')) || {};
-            if (!users[resetEmail]) {
-                showError('No account found with this email');
-                return;
-            }
-            
-            // Show reset form (in real app, this would send email)
-            document.getElementById('forgot-form').classList.add('hidden');
-            document.getElementById('reset-form').classList.remove('hidden');
-            document.getElementById('form-title').textContent = 'Reset Password';
-            document.getElementById('form-subtitle').textContent = 'Enter your new password';
-            
-            const successDiv = document.getElementById('error-message');
-            successDiv.className = 'alert alert-success';
-            successDiv.innerHTML = '<i class="fas fa-check-circle"></i> Verified! Enter your new password below.';
-            successDiv.classList.remove('hidden');
-        }
-
-        // Handle reset password
-        function handleResetPassword(event) {
-            event.preventDefault();
-            
-            const newPassword = document.getElementById('reset-password').value;
-            const confirmPassword = document.getElementById('reset-confirm').value;
-            
-            if (newPassword.length < 6) {
-                showError('Password must be at least 6 characters');
-                return;
-            }
-            
-            if (newPassword !== confirmPassword) {
-                showError('Passwords do not match');
-                return;
-            }
-            
-            // Update password
-            let users = JSON.parse(localStorage.getItem('edu_users')) || {};
-            if (users[resetEmail]) {
-                users[resetEmail].password = newPassword;
-                localStorage.setItem('edu_users', JSON.stringify(users));
-                
-                alert('Password reset successful! Please login with your new password.');
-                showLoginForm();
-            }
         }
     </script>
 </body>

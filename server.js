@@ -1,10 +1,12 @@
-/* =============================================
-   EDU CLASSREPO - BACKEND SERVER
-   Node.js + Express + MySQL
-   ============================================= */
+/*
+ * ========================================
+ * EDU CLASSREPO - SERVER
+ * Express.js + PostgreSQL Backend
+ * ========================================
+ */
 
 const express = require('express');
-const mysql = require('mysql2');
+const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
@@ -13,177 +15,155 @@ const path = require('path');
 
 const app = express();
 const PORT = 3000;
-const JWT_SECRET = 'edu_classrepo_secret_key_2024'; // Change in production
+const JWT_SECRET = 'edu_classrepo_secret_2024';
 
-/* =============================================
-   MIDDLEWARE SETUP
-   ============================================= */
+/*
+ * ========================================
+ * MIDDLEWARE
+ * ========================================
+ */
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname)); // Serve frontend files
+app.use(express.static(__dirname));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-/* =============================================
-   DATABASE CONNECTION
-   Update these credentials for your MySQL setup
-   ============================================= */
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',  // Your MySQL password
-    database: 'edu_classrepo'
+/*
+ * ========================================
+ * DATABASE CONNECTION
+ * ========================================
+ */
+const pool = new Pool({
+    host: '127.0.0.1',
+    port: 5432,
+    database: 'edu_classrepo',
+    user: 'postgres',
+    password: 'server123'
 });
 
-db.connect((err) => {
+pool.connect((err, client, release) => {
     if (err) {
-        console.error('Database connection failed:', err);
-        console.log('Running in demo mode without database...');
+        console.error('Database connection failed:', err.message);
     } else {
-        console.log('Connected to MySQL database');
+        console.log('Connected to PostgreSQL');
+        release();
     }
 });
 
-/* =============================================
-   FILE UPLOAD CONFIGURATION
-   ============================================= */
+/*
+ * ========================================
+ * FILE UPLOAD CONFIG
+ * ========================================
+ */
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/');
-    },
-    filename: (req, file, cb) => {
-        const uniqueName = Date.now() + '-' + file.originalname;
-        cb(null, uniqueName);
-    }
+    destination: (req, file, cb) => cb(null, 'uploads/'),
+    filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
 });
 
 const upload = multer({ 
-    storage: storage,
-    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+    storage, 
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB max
 });
 
-/* =============================================
-   AUTHENTICATION MIDDLEWARE
-   ============================================= */
-function authenticateToken(req, res, next) {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+/*
+ * ========================================
+ * AUTH MIDDLEWARE
+ * ========================================
+ */
+
+// Verify JWT token
+function auth(req, res, next) {
+    const token = req.headers['authorization']?.split(' ')[1];
     
     if (!token) {
-        return res.status(401).json({ success: false, message: 'Access denied' });
+        return res.status(401).json({ error: 'No token provided' });
     }
     
-    jwt.verify(token, JWT_SECRET, (err, user) => {
+    jwt.verify(token, JWT_SECRET, (err, decoded) => {
         if (err) {
-            return res.status(403).json({ success: false, message: 'Invalid token' });
+            return res.status(403).json({ error: 'Invalid token' });
         }
-        req.user = user;
+        req.user = decoded;
         next();
     });
 }
 
-// Admin only middleware
-function requireAdmin(req, res, next) {
+// Check if user is admin
+function adminOnly(req, res, next) {
     if (req.user.role !== 'admin') {
-        return res.status(403).json({ success: false, message: 'Admin access required' });
+        return res.status(403).json({ error: 'Admin access required' });
     }
     next();
 }
 
+/*
+ * ========================================
+ * AUTH ROUTES
+ * ========================================
+ */
 
-/* =============================================
-   AUTH ROUTES
-   ============================================= */
-
-// POST /api/auth/register - Register new student
+// Register new user
 app.post('/api/auth/register', async (req, res) => {
+    const { name, student_id, email, password, department, gender, semester } = req.body;
+    
+    // Validate email domain
+    if (!email.endsWith('@eastdelta.edu.bd')) {
+        return res.status(400).json({ error: 'Only @eastdelta.edu.bd emails allowed' });
+    }
+    
     try {
-        const { name, studentId, email, password, department } = req.body;
+        const hash = await bcrypt.hash(password, 10);
         
-        // Validate email domain
-        if (!email.toLowerCase().endsWith('@eastdelta.edu.bd')) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Only @eastdelta.edu.bd emails are allowed' 
-            });
-        }
-        
-        // Check if email exists
-        const [existing] = await db.promise().query(
-            'SELECT id FROM users WHERE email = ?', 
-            [email.toLowerCase()]
+        await pool.query(
+            `INSERT INTO users (student_id, name, email, password, department, gender, semester) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [student_id, name, email.toLowerCase(), hash, department, gender, semester]
         );
         
-        if (existing.length > 0) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Email already registered' 
-            });
+        res.json({ message: 'Registration successful' });
+    } catch (err) {
+        if (err.code === '23505') {
+            return res.status(400).json({ error: 'Email already exists' });
         }
-        
-        // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
-        
-        // Insert user
-        await db.promise().query(
-            'INSERT INTO users (student_id, name, email, password, department, role) VALUES (?, ?, ?, ?, ?, ?)',
-            [studentId, name, email.toLowerCase(), hashedPassword, department, 'student']
-        );
-        
-        res.json({ success: true, message: 'Registration successful' });
-        
-    } catch (error) {
-        console.error('Registration error:', error);
-        res.status(500).json({ success: false, message: 'Server error' });
+        res.status(500).json({ error: err.message });
     }
 });
 
-// POST /api/auth/login - Login
+// Login
 app.post('/api/auth/login', async (req, res) => {
+    const { email, password, userType } = req.body;
+    
     try {
-        const { email, password, userType } = req.body;
-        
-        // Find user
-        const [users] = await db.promise().query(
-            'SELECT * FROM users WHERE email = ?', 
+        const result = await pool.query(
+            'SELECT * FROM users WHERE email = $1', 
             [email.toLowerCase()]
         );
         
-        if (users.length === 0) {
-            return res.status(401).json({ 
-                success: false, 
-                message: 'No account found with this email' 
-            });
+        if (result.rows.length === 0) {
+            return res.status(401).json({ error: 'User not found' });
         }
         
-        const user = users[0];
+        const user = result.rows[0];
         
-        // Check password
+        // Verify password
         const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) {
-            return res.status(401).json({ 
-                success: false, 
-                message: 'Incorrect password' 
-            });
+            return res.status(401).json({ error: 'Wrong password' });
         }
         
-        // Check role matches
+        // Check admin access
         if (userType === 'admin' && user.role !== 'admin') {
-            return res.status(403).json({ 
-                success: false, 
-                message: 'This account does not have admin access' 
-            });
+            return res.status(403).json({ error: 'Not an admin account' });
         }
         
-        // Generate JWT token
+        // Generate token
         const token = jwt.sign(
-            { id: user.id, email: user.email, role: user.role },
-            JWT_SECRET,
+            { id: user.id, email: user.email, role: user.role }, 
+            JWT_SECRET, 
             { expiresIn: '24h' }
         );
         
         res.json({
-            success: true,
-            token: token,
+            token,
             user: {
                 id: user.student_id,
                 name: user.name,
@@ -192,258 +172,263 @@ app.post('/api/auth/login', async (req, res) => {
                 department: user.department
             }
         });
-        
-    } catch (error) {
-        console.error('Login error:', error);
-        res.status(500).json({ success: false, message: 'Server error' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
+/*
+ * ========================================
+ * COURSE ROUTES
+ * ========================================
+ */
 
-/* =============================================
-   COURSE ROUTES (CRUD)
-   ============================================= */
-
-// GET /api/courses - Get all courses
+// Get all courses
 app.get('/api/courses', async (req, res) => {
     try {
-        const [courses] = await db.promise().query(
+        const result = await pool.query(
             'SELECT * FROM courses ORDER BY department, code'
         );
-        res.json({ success: true, courses: courses });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error' });
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
-// GET /api/courses/:id - Get single course
+// Get single course by ID
 app.get('/api/courses/:id', async (req, res) => {
     try {
-        const [courses] = await db.promise().query(
-            'SELECT * FROM courses WHERE id = ?',
+        const result = await pool.query(
+            'SELECT * FROM courses WHERE id = $1', 
             [req.params.id]
         );
         
-        if (courses.length === 0) {
-            return res.status(404).json({ success: false, message: 'Course not found' });
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Course not found' });
         }
         
-        res.json({ success: true, course: courses[0] });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error' });
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
-// POST /api/courses - Create course (Admin only)
-app.post('/api/courses', authenticateToken, requireAdmin, async (req, res) => {
+// Create new course (Admin only)
+app.post('/api/courses', auth, adminOnly, async (req, res) => {
+    const { code, title, department, instructor } = req.body;
+    
     try {
-        const { code, title, department, instructor } = req.body;
-        
-        const [result] = await db.promise().query(
-            'INSERT INTO courses (code, title, department, instructor) VALUES (?, ?, ?, ?)',
-            [code, title, department, instructor]
+        const result = await pool.query(
+            `INSERT INTO courses (code, title, department, instructor) 
+             VALUES ($1, $2, $3, $4) RETURNING id`,
+            [code, title, department, instructor || 'TBA']
         );
         
-        res.json({ 
-            success: true, 
-            message: 'Course created',
-            courseId: result.insertId 
-        });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error' });
+        res.json({ id: result.rows[0].id, message: 'Course created' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
-// PUT /api/courses/:id - Update course (Admin only)
-app.put('/api/courses/:id', authenticateToken, requireAdmin, async (req, res) => {
+// Delete course (Admin only)
+app.delete('/api/courses/:id', auth, adminOnly, async (req, res) => {
     try {
-        const { code, title, department, instructor } = req.body;
-        
-        await db.promise().query(
-            'UPDATE courses SET code = ?, title = ?, department = ?, instructor = ? WHERE id = ?',
-            [code, title, department, instructor, req.params.id]
+        await pool.query('DELETE FROM courses WHERE id = $1', [req.params.id]);
+        res.json({ message: 'Course deleted' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/*
+ * ========================================
+ * ENROLLMENT ROUTES
+ * ========================================
+ */
+
+// Get user's enrolled courses
+app.get('/api/enrollments', auth, async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT c.* FROM courses c 
+             JOIN enrollments e ON c.id = e.course_id 
+             WHERE e.user_id = $1`,
+            [req.user.id]
         );
-        
-        res.json({ success: true, message: 'Course updated' });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error' });
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
-// DELETE /api/courses/:id - Delete course (Admin only)
-app.delete('/api/courses/:id', authenticateToken, requireAdmin, async (req, res) => {
+// Enroll in a course
+app.post('/api/enrollments', auth, async (req, res) => {
+    const { courseId } = req.body;
+    
     try {
-        await db.promise().query('DELETE FROM courses WHERE id = ?', [req.params.id]);
-        res.json({ success: true, message: 'Course deleted' });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error' });
+        await pool.query(
+            'INSERT INTO enrollments (user_id, course_id) VALUES ($1, $2)',
+            [req.user.id, courseId]
+        );
+        res.json({ message: 'Enrolled successfully' });
+    } catch (err) {
+        if (err.code === '23505') {
+            return res.status(400).json({ error: 'Already enrolled' });
+        }
+        res.status(500).json({ error: err.message });
     }
 });
 
-
-/* =============================================
-   FILE ROUTES (CRUD)
-   ============================================= */
-
-// GET /api/files/course/:courseId - Get files for a course
-app.get('/api/files/course/:courseId', async (req, res) => {
+// Unenroll from a course
+app.delete('/api/enrollments/:courseId', auth, async (req, res) => {
     try {
-        const [files] = await db.promise().query(
+        await pool.query(
+            'DELETE FROM enrollments WHERE user_id = $1 AND course_id = $2',
+            [req.user.id, req.params.courseId]
+        );
+        res.json({ message: 'Unenrolled successfully' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/*
+ * ========================================
+ * FILE ROUTES
+ * ========================================
+ */
+
+// Get approved files for a course
+app.get('/api/files/:courseId', async (req, res) => {
+    try {
+        const result = await pool.query(
             `SELECT f.*, u.name as uploader_name 
              FROM files f 
              JOIN users u ON f.uploaded_by = u.id 
-             WHERE f.course_id = ? AND f.status = 'approved'
-             ORDER BY f.upload_date DESC`,
+             WHERE f.course_id = $1 AND f.status = 'approved' 
+             ORDER BY f.created_at DESC`,
             [req.params.courseId]
         );
-        res.json({ success: true, files: files });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error' });
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
-// GET /api/files/pending - Get pending files (Admin only)
-app.get('/api/files/pending', authenticateToken, requireAdmin, async (req, res) => {
+// Get pending files (Admin only)
+app.get('/api/files/pending/all', auth, adminOnly, async (req, res) => {
     try {
-        const [files] = await db.promise().query(
-            `SELECT f.*, u.name as uploader_name, c.code as course_code, c.title as course_title
+        const result = await pool.query(
+            `SELECT f.*, u.name as uploader_name, c.code as course_code, c.title as course_title 
              FROM files f 
              JOIN users u ON f.uploaded_by = u.id 
-             JOIN courses c ON f.course_id = c.id
-             WHERE f.status = 'pending'
-             ORDER BY f.upload_date DESC`
+             JOIN courses c ON f.course_id = c.id 
+             WHERE f.status = 'pending' 
+             ORDER BY f.created_at DESC`
         );
-        res.json({ success: true, files: files });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error' });
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
-// POST /api/files/upload - Upload a file
-app.post('/api/files/upload', authenticateToken, upload.single('file'), async (req, res) => {
+// Upload a file
+app.post('/api/files', auth, upload.single('file'), async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+    }
+    
+    // Admin uploads are auto-approved
+    const status = req.user.role === 'admin' ? 'approved' : 'pending';
+    
     try {
-        const { courseId } = req.body;
-        const file = req.file;
-        
-        if (!file) {
-            return res.status(400).json({ success: false, message: 'No file uploaded' });
-        }
-        
-        const status = req.user.role === 'admin' ? 'approved' : 'pending';
-        
-        await db.promise().query(
-            'INSERT INTO files (course_id, file_name, file_path, file_size, uploaded_by, status) VALUES (?, ?, ?, ?, ?, ?)',
-            [courseId, file.originalname, file.filename, file.size, req.user.id, status]
+        await pool.query(
+            `INSERT INTO files (course_id, file_name, file_path, file_size, uploaded_by, status) 
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [req.body.courseId, req.file.originalname, req.file.filename, req.file.size, req.user.id, status]
         );
         
-        res.json({ 
-            success: true, 
-            message: status === 'approved' ? 'File uploaded' : 'File uploaded, pending approval'
-        });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error' });
+        const message = status === 'approved' 
+            ? 'File uploaded successfully' 
+            : 'File uploaded, pending admin approval';
+            
+        res.json({ message });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
-// PUT /api/files/:id/approve - Approve file (Admin only)
-app.put('/api/files/:id/approve', authenticateToken, requireAdmin, async (req, res) => {
+// Approve a file (Admin only)
+app.put('/api/files/:id/approve', auth, adminOnly, async (req, res) => {
     try {
-        await db.promise().query(
-            'UPDATE files SET status = ? WHERE id = ?',
-            ['approved', req.params.id]
+        await pool.query(
+            "UPDATE files SET status = 'approved' WHERE id = $1", 
+            [req.params.id]
         );
-        res.json({ success: true, message: 'File approved' });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error' });
+        res.json({ message: 'File approved' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
-// DELETE /api/files/:id - Delete file
-app.delete('/api/files/:id', authenticateToken, async (req, res) => {
+// Rename a file (Admin only)
+app.put('/api/files/:id/rename', auth, adminOnly, async (req, res) => {
+    const { newName } = req.body;
+    
+    if (!newName || newName.trim() === '') {
+        return res.status(400).json({ error: 'File name is required' });
+    }
+    
     try {
-        // Check if user owns the file or is admin
-        const [files] = await db.promise().query(
-            'SELECT uploaded_by FROM files WHERE id = ?',
+        await pool.query(
+            'UPDATE files SET file_name = $1 WHERE id = $2',
+            [newName.trim(), req.params.id]
+        );
+        res.json({ message: 'File renamed' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Reject/Delete a file (Admin only)
+app.delete('/api/files/:id/reject', auth, adminOnly, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM files WHERE id = $1', [req.params.id]);
+        res.json({ message: 'File rejected' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Delete own file or admin delete any file
+app.delete('/api/files/:id', auth, async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT uploaded_by FROM files WHERE id = $1', 
             [req.params.id]
         );
         
-        if (files.length === 0) {
-            return res.status(404).json({ success: false, message: 'File not found' });
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'File not found' });
         }
         
-        if (files[0].uploaded_by !== req.user.id && req.user.role !== 'admin') {
-            return res.status(403).json({ success: false, message: 'Not authorized' });
+        // Check permission
+        if (result.rows[0].uploaded_by !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Not authorized' });
         }
         
-        await db.promise().query('DELETE FROM files WHERE id = ?', [req.params.id]);
-        res.json({ success: true, message: 'File deleted' });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error' });
+        await pool.query('DELETE FROM files WHERE id = $1', [req.params.id]);
+        res.json({ message: 'File deleted' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
-
-/* =============================================
-   ENROLLMENT ROUTES
-   ============================================= */
-
-// GET /api/enrollments - Get user's enrolled courses
-app.get('/api/enrollments', authenticateToken, async (req, res) => {
-    try {
-        const [courses] = await db.promise().query(
-            `SELECT c.* FROM courses c
-             JOIN enrollments e ON c.id = e.course_id
-             WHERE e.user_id = ?`,
-            [req.user.id]
-        );
-        res.json({ success: true, courses: courses });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error' });
-    }
-});
-
-// POST /api/enrollments - Enroll in a course
-app.post('/api/enrollments', authenticateToken, async (req, res) => {
-    try {
-        const { courseId } = req.body;
-        
-        await db.promise().query(
-            'INSERT INTO enrollments (user_id, course_id) VALUES (?, ?)',
-            [req.user.id, courseId]
-        );
-        
-        res.json({ success: true, message: 'Enrolled successfully' });
-    } catch (error) {
-        if (error.code === 'ER_DUP_ENTRY') {
-            return res.status(400).json({ success: false, message: 'Already enrolled' });
-        }
-        res.status(500).json({ success: false, message: 'Server error' });
-    }
-});
-
-// DELETE /api/enrollments/:courseId - Unenroll from a course
-app.delete('/api/enrollments/:courseId', authenticateToken, async (req, res) => {
-    try {
-        await db.promise().query(
-            'DELETE FROM enrollments WHERE user_id = ? AND course_id = ?',
-            [req.user.id, req.params.courseId]
-        );
-        res.json({ success: true, message: 'Unenrolled successfully' });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error' });
-    }
-});
-
-
-/* =============================================
-   START SERVER
-   ============================================= */
+/*
+ * ========================================
+ * START SERVER
+ * ========================================
+ */
 app.listen(PORT, () => {
-    console.log(`
-    ╔════════════════════════════════════════╗
-    ║   EDU ClassRepo Server Running         ║
-    ║   http://localhost:${PORT}               ║
-    ╚════════════════════════════════════════╝
-    `);
+    console.log(`Server running at http://localhost:${PORT}`);
 });
-
