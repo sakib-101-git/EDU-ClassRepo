@@ -2,52 +2,141 @@
 
 **East Delta University Note Sharing Platform**
 
-A web application for students to share and download course materials.
+A CRUD web application for students to share and download course materials with admin moderation.
 
 ---
 
 ## 📁 Project Structure
 
 ```
-EDU ClassRepo/
-├── index.html        # Login & Signup page
-├── dashboard.html    # Browse all courses
-├── my-courses.html   # User's enrolled courses
-├── course.html       # Course files view
-├── admin.html        # Admin: Pending approvals
-├── settings.html     # Account settings
-├── app.js            # Frontend JavaScript
-├── style.css         # Stylesheet
-├── server.js         # Backend API server
-├── database.sql      # Database schema
-├── package.json      # Dependencies
-└── uploads/          # File storage
+Edu ClassRepo Project/
+├── src/                      # Backend source code
+│   ├── config/              # Configuration files
+│   │   ├── database.js      # PostgreSQL connection
+│   │   ├── multer.js        # File upload configuration
+│   │   └── constants.js     # App constants
+│   ├── controllers/         # Business logic (CRUD)
+│   │   ├── authController.js
+│   │   ├── courseController.js
+│   │   ├── enrollmentController.js
+│   │   └── fileController.js
+│   ├── middleware/          # Express middleware
+│   │   ├── auth.js
+│   │   └── errorHandler.js
+│   ├── routes/              # API routes
+│   │   ├── authRoutes.js
+│   │   ├── courseRoutes.js
+│   │   ├── enrollmentRoutes.js
+│   │   └── fileRoutes.js
+│   └── utils/
+│       └── validation.js
+├── public/                  # Frontend assets
+│   ├── index.html          # Login page
+│   ├── dashboard.html      # Main dashboard
+│   ├── my-courses.html     # Student courses
+│   ├── course.html         # Course files
+│   ├── admin.html          # Admin panel
+│   ├── settings.html       # Settings
+│   ├── app.js              # Frontend client
+│   ├── style.css           # Styles
+│   └── login.css
+├── uploads/                # File storage
+├── server.js               # Entry point
+├── package.json
+├── database.sql
+├── .gitignore
+└── README.md
 ```
 
 ---
 
-## 🔀 File Routing Diagram
+## 🛠 Backend Architecture (CRUD)
 
+### Controllers
+- **authController**: Register, login
+- **courseController**: CRUD courses (admin)
+- **enrollmentController**: Manage enrollments
+- **fileController**: Upload, approve, delete files
+
+### API Routes
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/courses`
+- `POST /api/courses` (Admin)
+- `PUT /api/courses/:id` (Admin)
+- `DELETE /api/courses/:id` (Admin)
+- `GET /api/enrollments`
+- `POST /api/enrollments`
+- `DELETE /api/enrollments/:courseId`
+- `GET /api/files/:courseId`
+- `POST /api/files`
+- `PUT /api/files/:id/approve` (Admin)
+- `DELETE /api/files/:id`
+
+---
+
+## ⚙️ Setup
+
+### Prerequisites
+- Node.js (v14+)
+- PostgreSQL (v12+)
+
+### Installation
+```bash
+npm install
+psql -U postgres -f database.sql
+npm start
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                              PAGES FLOW                                  │
-└─────────────────────────────────────────────────────────────────────────┘
 
-                              ┌──────────────┐
-                              │  index.html  │
-                              │   (Login)    │
-                              └──────┬───────┘
-                                     │
-                          ┌──────────┴──────────┐
-                          ▼                     ▼
-                   [STUDENT]               [ADMIN]
-                          │                     │
-                          ▼                     ▼
-              ┌───────────────────┐   ┌─────────────────┐
-              │  dashboard.html   │   │  dashboard.html │
-              │  (Browse Courses) │   │ (Manage Courses)│
-              └────────┬──────────┘   └────────┬────────┘
-                       │                       │
+Server runs at `http://localhost:3000`
+
+---
+
+## 🔒 Features
+
+- JWT authentication
+- Role-based access control (Student/Admin)
+- Email domain validation
+- Password hashing with bcrypt
+- File upload with moderation
+- CORS protection
+- Centralized error handling
+
+---
+
+## 📦 Dependencies
+
+```json
+{
+  "express": "^4.18.2",
+  "pg": "^8.11.3",
+  "bcrypt": "^5.1.1",
+  "jsonwebtoken": "^9.0.2",
+  "multer": "^1.4.5-lts.1",
+  "cors": "^2.8.5"
+}
+```
+
+---
+
+## 📝 Environment
+
+Create `.env` file:
+```
+PORT=3000
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_NAME=edu_classrepo
+DB_USER=postgres
+DB_PASSWORD=server123
+JWT_SECRET=edu_classrepo_secret_2024
+```
+
+---
+
+## 📄 License
+
+ISC
            ┌───────────┼───────────┐           │
            ▼           ▼           ▼           ▼
     ┌────────────┐ ┌──────────┐ ┌──────────┐ ┌────────────┐

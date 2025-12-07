@@ -1,24 +1,33 @@
-/* EDU ClassRepo - Frontend JavaScript */
-
+// Frontend API Client
 const API = 'http://localhost:3000/api';
 
-/* ========== AUTH ========== */
+// ============= AUTH HELPERS =============
+const getToken = () => localStorage.getItem('token');
+const getUser = () => {
+    const u = localStorage.getItem('user');
+    return u ? JSON.parse(u) : null;
+};
+const isLoggedIn = () => !!getToken();
+const logout = () => {
+    localStorage.clear();
+    location.href = 'index.html';
+};
 
-function getToken() { return localStorage.getItem('token'); }
-function getUser() { const u = localStorage.getItem('user'); return u ? JSON.parse(u) : null; }
-function isLoggedIn() { return !!getToken(); }
-function logout() { localStorage.clear(); location.href = 'index.html'; }
-
-function checkAuth() {
-    if (!isLoggedIn()) { location.href = 'index.html'; return null; }
+const checkAuth = () => {
+    if (!isLoggedIn()) {
+        location.href = 'index.html';
+        return null;
+    }
     return getUser();
-}
+};
 
-/* ========== API HELPER ========== */
-
-async function api(endpoint, options = {}) {
+// ============= API HELPER =============
+const api = async (endpoint, options = {}) => {
     const token = getToken();
-    const config = { headers: { 'Content-Type': 'application/json' }, ...options };
+    const config = {
+        headers: { 'Content-Type': 'application/json' },
+        ...options
+    };
     if (token) config.headers['Authorization'] = `Bearer ${token}`;
     
     try {
@@ -28,29 +37,36 @@ async function api(endpoint, options = {}) {
         console.error('API Error:', err);
         return { error: 'Connection failed' };
     }
-}
+};
 
-/* ========== LOGIN PAGE ========== */
-
+// ============= LOGIN PAGE =============
 let userType = 'student';
 
-function setUserType(type) {
+const setUserType = (type) => {
     userType = type;
     document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
     event.target.classList.add('active');
     
     const notice = document.getElementById('admin-notice');
     const footer = document.getElementById('login-footer');
-    if (type === 'admin') { notice?.classList.remove('hidden'); footer?.classList.add('hidden'); }
-    else { notice?.classList.add('hidden'); footer?.classList.remove('hidden'); }
-}
+    if (type === 'admin') {
+        notice?.classList.remove('hidden');
+        footer?.classList.add('hidden');
+    } else {
+        notice?.classList.add('hidden');
+        footer?.classList.remove('hidden');
+    }
+};
 
-function showError(msg) {
+const showError = (msg) => {
     const el = document.getElementById('error-message');
-    if (el) { el.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${msg}`; el.classList.remove('hidden'); }
-}
+    if (el) {
+        el.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${msg}`;
+        el.classList.remove('hidden');
+    }
+};
 
-function showSignupForm() {
+const showSignupForm = () => {
     document.getElementById('login-form').classList.add('hidden');
     document.getElementById('signup-form').classList.remove('hidden');
     document.getElementById('login-footer').classList.add('hidden');
@@ -59,9 +75,9 @@ function showSignupForm() {
     document.getElementById('form-title').textContent = 'Create Account';
     document.getElementById('form-subtitle').textContent = 'Register as a new student';
     document.getElementById('error-message').classList.add('hidden');
-}
+};
 
-function showLoginForm() {
+const showLoginForm = () => {
     document.getElementById('login-form').classList.remove('hidden');
     document.getElementById('signup-form').classList.add('hidden');
     document.getElementById('login-footer').classList.remove('hidden');
@@ -70,24 +86,30 @@ function showLoginForm() {
     document.getElementById('form-title').textContent = 'Get Started';
     document.getElementById('form-subtitle').textContent = 'Sign in to access notes and resources';
     document.getElementById('error-message').classList.add('hidden');
-}
+};
 
-async function handleLogin(e) {
+const handleLogin = async (e) => {
     e.preventDefault();
     const email = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-password').value;
     
-    if (!email.endsWith('@eastdelta.edu.bd')) return showError('Use your @eastdelta.edu.bd email');
+    if (!email.endsWith('@eastdelta.edu.bd')) {
+        return showError('Use your @eastdelta.edu.bd email');
+    }
     
-    const data = await api('/auth/login', { method: 'POST', body: JSON.stringify({ email, password, userType }) });
+    const data = await api('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password, userType })
+    });
+    
     if (data.error) return showError(data.error);
     
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
     location.href = 'dashboard.html';
-}
+};
 
-async function handleSignup(e) {
+const handleSignup = async (e) => {
     e.preventDefault();
     const form = {
         name: document.getElementById('signup-name').value.trim(),
@@ -100,77 +122,99 @@ async function handleSignup(e) {
         confirm: document.getElementById('signup-confirm').value
     };
     
-    if (!form.email.endsWith('@eastdelta.edu.bd')) return showError('Use your @eastdelta.edu.bd email');
-    if (form.password.length < 6) return showError('Password must be at least 6 characters');
-    if (form.password !== form.confirm) return showError('Passwords do not match');
+    if (!form.email.endsWith('@eastdelta.edu.bd')) {
+        return showError('Use your @eastdelta.edu.bd email');
+    }
+    if (form.password.length < 6) {
+        return showError('Password must be at least 6 characters');
+    }
+    if (form.password !== form.confirm) {
+        return showError('Passwords do not match');
+    }
     
-    const data = await api('/auth/register', { method: 'POST', body: JSON.stringify(form) });
+    const data = await api('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(form)
+    });
+    
     if (data.error) return showError(data.error);
     
     alert('Account created! Please login.');
     showLoginForm();
-}
+};
 
-function togglePassword(inputId, btn) {
+const togglePassword = (inputId, btn) => {
     const input = document.getElementById(inputId);
     const icon = btn.querySelector('i');
-    if (input.type === 'password') { input.type = 'text'; icon.classList.replace('fa-eye', 'fa-eye-slash'); }
-    else { input.type = 'password'; icon.classList.replace('fa-eye-slash', 'fa-eye'); }
-}
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+    }
+};
 
-/* ========== COURSES ========== */
+// ============= COURSES =============
+const loadCourses = async () => await api('/courses');
+const loadEnrollments = async () => await api('/enrollments');
 
-async function loadCourses() { return await api('/courses'); }
-async function loadEnrollments() { return await api('/enrollments'); }
-
-async function enrollCourse(id) {
-    const data = await api('/enrollments', { method: 'POST', body: JSON.stringify({ courseId: id }) });
-    if (data.error) { alert(data.error); return false; }
+const enrollCourse = async (id) => {
+    const data = await api('/enrollments', {
+        method: 'POST',
+        body: JSON.stringify({ courseId: id })
+    });
+    if (data.error) {
+        alert(data.error);
+        return false;
+    }
     alert('Enrolled successfully!');
     return true;
-}
+};
 
-async function unenrollCourse(id) {
+const unenrollCourse = async (id) => {
     if (!confirm('Unenroll from this course?')) return false;
     await api(`/enrollments/${id}`, { method: 'DELETE' });
     alert('Unenrolled');
     return true;
-}
+};
 
-async function deleteCourse(id) {
+const deleteCourse = async (id) => {
     if (!confirm('Delete this course?')) return false;
     await api(`/courses/${id}`, { method: 'DELETE' });
     alert('Course deleted');
     return true;
-}
+};
 
-async function createCourse(code, title, dept, instructor) {
-    return await api('/courses', { method: 'POST', body: JSON.stringify({ code, title, department: dept, instructor }) });
-}
+const createCourse = async (code, title, dept, instructor) => {
+    return await api('/courses', {
+        method: 'POST',
+        body: JSON.stringify({ code, title, department: dept, instructor })
+    });
+};
 
-/* ========== FILES ========== */
+// ============= FILES =============
+const loadCourseFiles = async (courseId) => await api(`/files/${courseId}`);
+const loadPendingFiles = async () => await api('/files/pending/all');
 
-async function loadCourseFiles(courseId) { return await api(`/files/${courseId}`); }
-async function loadPendingFiles() { return await api('/files/pending/all'); }
-
-async function approveFile(id) {
+const approveFile = async (id) => {
     const data = await api(`/files/${id}/approve`, { method: 'PUT' });
     return !data.error;
-}
+};
 
-async function rejectFile(id) {
+const rejectFile = async (id) => {
     if (!confirm('Reject and delete this file?')) return false;
     const data = await api(`/files/${id}/reject`, { method: 'DELETE' });
     return !data.error;
-}
+};
 
-async function deleteFile(id) {
+const deleteFile = async (id) => {
     if (!confirm('Delete this file?')) return false;
     await api(`/files/${id}`, { method: 'DELETE' });
     return true;
-}
+};
 
-function getFileIcon(filename) {
+const getFileIcon = (filename) => {
     const ext = filename.split('.').pop().toLowerCase();
     const icons = {
         pdf: { class: 'pdf', icon: 'fa-file-pdf' },
@@ -185,20 +229,19 @@ function getFileIcon(filename) {
         zip: { class: 'zip', icon: 'fa-file-archive' }
     };
     return icons[ext] || { class: 'default', icon: 'fa-file' };
-}
+};
 
-/* ========== UI ========== */
-
-function loadHeader() {
+// ============= UI HELPERS =============
+const loadHeader = () => {
     const user = getUser();
     if (!user) return;
     const nameEl = document.getElementById('user-name');
     const roleEl = document.getElementById('user-role');
     if (nameEl) nameEl.textContent = user.name;
     if (roleEl) roleEl.textContent = user.role === 'admin' ? 'Admin' : 'Student';
-}
+};
 
-function loadSidebar(active) {
+const loadSidebar = (active) => {
     const user = getUser();
     const isAdmin = user?.role === 'admin';
     const sidebar = document.querySelector('.sidebar');
@@ -214,9 +257,13 @@ function loadSidebar(active) {
             <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt" style="color:var(--danger)"></i><span style="color:var(--danger)">Logout</span></a></li>
         </ul>
     `;
-}
+};
 
-function openModal(id) { document.getElementById(id)?.classList.add('active'); }
-function closeModal(id) { document.getElementById(id)?.classList.remove('active'); }
+const openModal = (id) => document.getElementById(id)?.classList.add('active');
+const closeModal = (id) => document.getElementById(id)?.classList.remove('active');
 
-window.onclick = (e) => { if (e.target.classList.contains('modal')) e.target.classList.remove('active'); };
+window.onclick = (e) => {
+    if (e.target.classList.contains('modal')) {
+        e.target.classList.remove('active');
+    }
+};
