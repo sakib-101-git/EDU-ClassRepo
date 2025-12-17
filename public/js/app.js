@@ -10,12 +10,12 @@ const getUser = () => {
 const isLoggedIn = () => !!getToken();
 const logout = () => {
     localStorage.clear();
-    location.href = 'index.html';
+    location.href = '/index.html';
 };
 
 const checkAuth = () => {
     if (!isLoggedIn()) {
-        location.href = 'index.html';
+        location.href = '/index.html';
         return null;
     }
     return getUser();
@@ -106,7 +106,7 @@ const handleLogin = async (e) => {
     
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
-    location.href = 'dashboard.html';
+    location.href = 'pages/dashboard.html';
 };
 
 const handleSignup = async (e) => {
