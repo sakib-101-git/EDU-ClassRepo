@@ -2,7 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
-const { PORT } = require('./src/config/constants');
+//
+const { PORT } = require('./src/config/constants'); 
 const errorHandler = require('./src/middleware/errorHandler');
 
 // Import routes
@@ -20,6 +21,11 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// [FIX] Explicitly redirect root URL to index.html (Login Page)
+app.get('/', (req, res) => {
+    res.redirect('/index.html');
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
@@ -36,7 +42,7 @@ app.use((req, res) => {
     res.status(404).json({ error: 'Route not found' });
 });
 
-// Error handler (must be last)
+// Error handler
 app.use(errorHandler);
 
 // Start server

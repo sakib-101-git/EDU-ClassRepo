@@ -28,11 +28,12 @@ body {
     color: var(--text-dark);
     line-height: 1.6;
     min-height: 100vh;
+    /* Removed flex centering that was causing the issue */
 }
 
 /* === Layout === */
-.app-container { min-height: 100vh; display: flex; flex-direction: column; }
-.app-body { display: flex; flex: 1; }
+.app-container { min-height: 100vh; display: flex; flex-direction: column; width: 100%; }
+.app-body { display: flex; flex: 1; width: 100%; }
 
 /* Header */
 .header {
@@ -69,6 +70,7 @@ body {
     position: sticky;
     top: 74px;
     height: calc(100vh - 74px);
+    flex-shrink: 0; /* Prevents sidebar from shrinking */
 }
 
 .nav-menu { list-style: none; }
@@ -84,7 +86,7 @@ body {
 .nav-divider { height: 1px; background: var(--border); margin: 20px; }
 
 /* Main Content */
-.main-content { flex: 1; padding: 30px; }
+.main-content { flex: 1; padding: 30px; width: 100%; }
 .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
 .page-title { font-size: 26px; font-weight: 700; }
 
@@ -214,9 +216,12 @@ body {
     .search-box { width: 100%; }
 }
 
-/* EDU ClassRepo - Login Page Styles */
+/* =========================================
+   EDU ClassRepo - Login Page Styles
+   (Only applied when body has .login-page class)
+   ========================================= */
 
-body {
+body.login-page {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     min-height: 100vh;
     display: flex;
@@ -290,9 +295,6 @@ body {
 .toggle-btn.active { background: linear-gradient(135deg, #722f37, #5a2328); color: white; box-shadow: 0 4px 15px rgba(114,47,55,0.4); }
 
 /* Form Elements */
-.form-group { margin-bottom: 20px; }
-.form-group label { display: block; font-size: 12px; font-weight: 600; color: #666; margin-bottom: 8px; text-transform: uppercase; }
-.input-wrapper { position: relative; }
 .form-input { 
     width: 100%; 
     padding: 14px 16px; 
@@ -319,8 +321,6 @@ body {
     cursor: pointer;
 }
 .form-select:focus { outline: none; border-color: #722f37; }
-.form-row { display: flex; gap: 15px; }
-.form-row .form-group { flex: 1; }
 .form-hint { font-size: 12px; color: #999; margin-top: 6px; }
 
 /* Password Toggle */
@@ -346,34 +346,14 @@ body {
 .form-link { color: #722f37; font-weight: 600; cursor: pointer; }
 .form-link:hover { text-decoration: underline; }
 
-/* Button */
-.btn { 
-    width: 100%; 
-    padding: 15px 24px; 
-    border: none; 
-    border-radius: 10px; 
-    font-size: 15px; 
-    font-weight: 600; 
-    font-family: inherit;
-    cursor: pointer; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    gap: 10px; 
-    transition: all 0.3s ease;
-}
+/* Button (Login) */
 .btn-primary { background: linear-gradient(135deg, #722f37, #4a1c1c); color: white; box-shadow: 0 6px 20px rgba(114,47,55,0.35); }
 .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(114,47,55,0.5); }
 .btn-secondary { background: #f5f2ef; color: #666; }
 
 /* Alerts */
-.alert { padding: 14px 16px; border-radius: 10px; margin-bottom: 20px; font-size: 14px; display: flex; align-items: center; gap: 10px; }
 .alert-error { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
 .alert-warning { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
-
-/* Utilities */
-.hidden { display: none !important; }
-.mt-20 { margin-top: 20px; }
 
 /* Responsive */
 @media (max-width: 800px) {

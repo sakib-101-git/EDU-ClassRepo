@@ -1,5 +1,5 @@
 // Frontend API Client
-const API = 'http://localhost:3000/api';
+const API = '/api';
 
 // ============= AUTH HELPERS =============
 const getToken = () => localStorage.getItem('token');
@@ -8,14 +8,17 @@ const getUser = () => {
     return u ? JSON.parse(u) : null;
 };
 const isLoggedIn = () => !!getToken();
+
 const logout = () => {
     localStorage.clear();
-    location.href = '/index.html';
+    // [FIX] Redirect to index.html (Login)
+    location.href = 'index.html';
 };
 
 const checkAuth = () => {
     if (!isLoggedIn()) {
-        location.href = '/index.html';
+        // [FIX] Redirect to index.html if not logged in
+        location.href = 'index.html';
         return null;
     }
     return getUser();
@@ -61,7 +64,7 @@ const setUserType = (type) => {
 const showError = (msg) => {
     const el = document.getElementById('error-message');
     if (el) {
-        el.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${msg}`;
+        el.innerHTML = `&lt;i class="fas fa-exclamation-circle"&gt;&lt;/i&gt; ${msg}`;
         el.classList.remove('hidden');
     }
 };
@@ -106,7 +109,8 @@ const handleLogin = async (e) => {
     
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
-    location.href = 'pages/dashboard.html';
+    // [FIX] Redirect to dashboard.html after login
+    location.href = 'dashboard.html';
 };
 
 const handleSignup = async (e) => {
@@ -241,6 +245,7 @@ const loadHeader = () => {
     if (roleEl) roleEl.textContent = user.role === 'admin' ? 'Admin' : 'Student';
 };
 
+// [FIX] Sidebar now uses the Old Naming files
 const loadSidebar = (active) => {
     const user = getUser();
     const isAdmin = user?.role === 'admin';
