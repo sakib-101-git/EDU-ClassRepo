@@ -19,6 +19,8 @@ CREATE TABLE IF NOT EXISTS users (
     gender VARCHAR(10),
     semester VARCHAR(10),
     role VARCHAR(20) DEFAULT 'student',
+    is_verified BOOLEAN DEFAULT FALSE,      -- New Column
+    verification_token VARCHAR(255),        -- New Column
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -56,7 +58,7 @@ CREATE TABLE IF NOT EXISTS files (
 -- ============ DEFAULT ADMIN ============
 -- Password: admin123 (bcrypt hash)
 INSERT INTO users (student_id, name, email, password, department, role) VALUES
-('ADM-001', 'Admin', 'admin@eastdelta.edu.bd', '$2b$10$rICGc.pzZ3qXTzPxLxvSXOqZMlnwRLlTQHKXFqXXOEJpF5jJKQYwu', 'Admin', 'admin');
+('ADM-001', 'Admin', 'admin@eastdelta.edu.bd', '$2b$10$rICGc.pzZ3qXTzPxLxvSXOqZMlnwRLlTQHKXFqXXOEJpF5jJKQYwu', 'Admin', 'admin', true);
 
 -- ============ ALL COURSES ============
 

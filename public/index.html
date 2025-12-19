@@ -162,6 +162,14 @@
     <script>
         // Redirect if logged in
         if (isLoggedIn()) window.location.href = 'dashboard.html';
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('verified') === 'true') {
+            const errorEl = document.getElementById('error-message');
+            errorEl.classList.remove('hidden', 'alert-error');
+            errorEl.classList.add('alert-success');
+            errorEl.style.display = 'block';
+            errorEl.innerHTML = '<i class="fas fa-check-circle"></i> Verification successful! You can now login.';
+        }
     </script>
 </body>
 </html>

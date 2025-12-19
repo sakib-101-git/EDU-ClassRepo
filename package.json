@@ -7,12 +7,14 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "pg": "^8.11.3",
     "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^4.18.2",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
-    "cors": "^2.8.5"
+    "nodemailer": "^7.0.11",
+    "pg": "^8.16.3"
   },
   "author": "EDU Team",
   "license": "ISC"

@@ -11,13 +11,11 @@ const isLoggedIn = () => !!getToken();
 
 const logout = () => {
     localStorage.clear();
-    // [FIX] Redirect to index.html (Login)
     location.href = 'index.html';
 };
 
 const checkAuth = () => {
     if (!isLoggedIn()) {
-        // [FIX] Redirect to index.html if not logged in
         location.href = 'index.html';
         return null;
     }
@@ -64,7 +62,7 @@ const setUserType = (type) => {
 const showError = (msg) => {
     const el = document.getElementById('error-message');
     if (el) {
-        el.innerHTML = `&lt;i class="fas fa-exclamation-circle"&gt;&lt;/i&gt; ${msg}`;
+        el.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${msg}`;
         el.classList.remove('hidden');
     }
 };
@@ -96,7 +94,10 @@ const handleLogin = async (e) => {
     const email = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-password').value;
     
-    if (!email.endsWith('@eastdelta.edu.bd')) {
+    // [LOGIC UPDATE]
+    // If user is Admin, allow ANY email (Gmail, etc.).
+    // If user is Student, REQUIRE @eastdelta.edu.bd
+    if (userType !== 'admin' && !email.endsWith('@eastdelta.edu.bd')) {
         return showError('Use your @eastdelta.edu.bd email');
     }
     
@@ -105,12 +106,18 @@ const handleLogin = async (e) => {
         body: JSON.stringify({ email, password, userType })
     });
     
+    // This catches "Please verify your email" errors from the backend
     if (data.error) return showError(data.error);
     
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
-    // [FIX] Redirect to dashboard.html after login
-    location.href = 'dashboard.html';
+    
+    // Redirect based on role
+    if (data.user.role === 'admin') {
+        location.href = 'admin.html';
+    } else {
+        location.href = 'dashboard.html';
+    }
 };
 
 const handleSignup = async (e) => {
@@ -126,6 +133,7 @@ const handleSignup = async (e) => {
         confirm: document.getElementById('signup-confirm').value
     };
     
+    // Strict check for students signing up
     if (!form.email.endsWith('@eastdelta.edu.bd')) {
         return showError('Use your @eastdelta.edu.bd email');
     }
@@ -143,7 +151,7 @@ const handleSignup = async (e) => {
     
     if (data.error) return showError(data.error);
     
-    alert('Account created! Please login.');
+    alert('Account created! Please check your email to verify.');
     showLoginForm();
 };
 
@@ -245,7 +253,6 @@ const loadHeader = () => {
     if (roleEl) roleEl.textContent = user.role === 'admin' ? 'Admin' : 'Student';
 };
 
-// [FIX] Sidebar now uses the Old Naming files
 const loadSidebar = (active) => {
     const user = getUser();
     const isAdmin = user?.role === 'admin';
