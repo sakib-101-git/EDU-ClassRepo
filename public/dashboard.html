@@ -9,9 +9,14 @@
 <body>
     <div class="app-container">
         <header class="header">
-            <a href="dashboard.html" class="logo" style="text-decoration:none">
-                <i class="fas fa-book-reader"></i> EDU ClassRepo
-            </a>
+            <div style="display:flex;align-items:center;gap:15px">
+                <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <a href="dashboard.html" class="logo" style="text-decoration:none">
+                    <i class="fas fa-book-reader"></i> EDU ClassRepo
+                </a>
+            </div>
             <div class="user-menu">
                 <div class="user-info">
                     <div class="user-name" id="user-name">-</div>
@@ -133,17 +138,17 @@
             grid.innerHTML = list.map(c => {
                 const isEnrolled = enrolled.some(e => e.id === c.id);
                 return `
-                    <div class="course-card ${colors[c.department] || ''}">
+                    <div class="course-card ${colors[c.department] || ''}" onclick="handleCardClick(${c.id}, event)">
                         <div class="card-header">
                             <h3>${c.code}: ${c.title}</h3>
                             <span><i class="fas fa-user-tie"></i> ${c.instructor || 'TBA'}</span>
                         </div>
                         <div class="card-body">
                             ${user?.role === 'admin' 
-                                ? `<button class="btn btn-danger btn-small" onclick="handleDelete(${c.id})"><i class="fas fa-trash"></i> Delete</button>`
+                                ? `<button class="btn btn-danger btn-small" onclick="event.stopPropagation();handleDelete(${c.id})"><i class="fas fa-trash"></i> Delete</button>`
                                 : isEnrolled 
-                                    ? `<a href="course.html?id=${c.id}" class="btn btn-secondary btn-small"><i class="fas fa-folder-open"></i> Open</a>`
-                                    : `<button class="btn btn-primary btn-small" onclick="handleEnroll(${c.id})"><i class="fas fa-plus"></i> Enroll</button>`
+                                    ? `<a href="course.html?id=${c.id}" class="btn btn-secondary btn-small" onclick="event.stopPropagation()"><i class="fas fa-folder-open"></i> Open</a>`
+                                    : `<button class="btn btn-primary btn-small" onclick="event.stopPropagation();handleEnroll(${c.id})"><i class="fas fa-plus"></i> Enroll</button>`
                             }
                         </div>
                         <div class="card-footer">
@@ -179,6 +184,19 @@
         // DELETE - Course (Admin)
         async function handleDelete(id) {
             if (await deleteCourse(id)) await loadData();
+        }
+
+        // Handle course card click
+        function handleCardClick(courseId, event) {
+            // Don't navigate if clicking on a button
+            if (event.target.closest('button') || event.target.closest('a')) {
+                return;
+            }
+            const user = checkAuth();
+            const isEnrolled = enrolled.some(e => e.id === courseId);
+            if (user?.role === 'admin' || isEnrolled) {
+                window.location.href = `course.html?id=${courseId}`;
+            }
         }
     </script>
 </body>

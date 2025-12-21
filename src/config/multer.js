@@ -1,6 +1,12 @@
+/**
+ * Multer Configuration
+ * Handles file uploads with validation
+ */
+
 const multer = require('multer');
 const path = require('path');
 
+// Configure storage location and filename
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, path.join(__dirname, '../../uploads'));
@@ -11,15 +17,22 @@ const storage = multer.diskStorage({
     }
 });
 
+// Configure upload with file size limit and type validation
 const upload = multer({
     storage,
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max file size
     fileFilter: (req, file, cb) => {
-        const allowedMimes = ['application/pdf', 'application/msword', 
+        // Allowed file types
+        const allowedMimes = [
+            'application/pdf',
+            'application/msword',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'application/vnd.ms-powerpoint',
             'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-            'image/jpeg', 'image/png', 'application/zip'];
+            'image/jpeg',
+            'image/png',
+            'application/zip'
+        ];
         
         if (allowedMimes.includes(file.mimetype)) {
             cb(null, true);

@@ -1,12 +1,21 @@
+/**
+ * File Controller
+ * Handles file upload, download, approval, and deletion
+ */
+
 const pool = require('../config/database');
 const { FILE_STATUS } = require('../config/constants');
 
+/**
+ * Get all approved files for a course
+ * GET /api/files/:courseId
+ */
 exports.getCourseFiles = async (req, res, next) => {
     try {
         const { courseId } = req.params;
         
         const result = await pool.query(
-            `SELECT f.id, f.file_name, f.file_size, f.created_at, u.name as uploader_name 
+            `SELECT f.id, f.file_name, f.file_path, f.file_size, f.created_at, u.name as uploader_name 
              FROM files f 
              JOIN users u ON f.uploaded_by = u.id 
              WHERE f.course_id = $1 AND f.status = $2
@@ -20,10 +29,14 @@ exports.getCourseFiles = async (req, res, next) => {
     }
 };
 
+/**
+ * Get all pending files (Admin only)
+ * GET /api/files/pending/all
+ */
 exports.getPendingFiles = async (req, res, next) => {
     try {
         const result = await pool.query(
-            `SELECT f.id, f.file_name, f.file_size, f.created_at, u.name as uploader_name, 
+            `SELECT f.id, f.file_name, f.file_path, f.file_size, f.created_at, u.name as uploader_name, 
                     c.code as course_code, c.title as course_title
              FROM files f 
              JOIN users u ON f.uploaded_by = u.id 
@@ -39,6 +52,10 @@ exports.getPendingFiles = async (req, res, next) => {
     }
 };
 
+/**
+ * Upload file
+ * POST /api/files
+ */
 exports.uploadFile = async (req, res, next) => {
     try {
         if (!req.file) {
@@ -50,6 +67,7 @@ exports.uploadFile = async (req, res, next) => {
             return res.status(400).json({ error: 'Course ID is required' });
         }
         
+        // Admin files are auto-approved, student files need approval
         const status = req.user.role === 'admin' ? FILE_STATUS.APPROVED : FILE_STATUS.PENDING;
         
         await pool.query(
@@ -68,6 +86,10 @@ exports.uploadFile = async (req, res, next) => {
     }
 };
 
+/**
+ * Approve file (Admin only)
+ * PUT /api/files/:id/approve
+ */
 exports.approveFile = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -87,6 +109,10 @@ exports.approveFile = async (req, res, next) => {
     }
 };
 
+/**
+ * Rename file (Admin only)
+ * PUT /api/files/:id/rename
+ */
 exports.renameFile = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -111,6 +137,10 @@ exports.renameFile = async (req, res, next) => {
     }
 };
 
+/**
+ * Delete file
+ * DELETE /api/files/:id
+ */
 exports.deleteFile = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -124,6 +154,7 @@ exports.deleteFile = async (req, res, next) => {
             return res.status(404).json({ error: 'File not found' });
         }
         
+        // Only allow deletion by uploader or admin
         if (fileResult.rows[0].uploaded_by !== req.user.id && req.user.role !== 'admin') {
             return res.status(403).json({ error: 'Not authorized to delete this file' });
         }
@@ -135,6 +166,10 @@ exports.deleteFile = async (req, res, next) => {
     }
 };
 
+/**
+ * Reject file (Admin only)
+ * DELETE /api/files/:id/reject
+ */
 exports.rejectFile = async (req, res, next) => {
     try {
         const { id } = req.params;

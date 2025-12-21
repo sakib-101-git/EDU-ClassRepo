@@ -1,18 +1,21 @@
+/**
+ * Main Server File
+ * Express server setup and route configuration
+ */
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-
-//
-const { PORT } = require('./src/config/constants'); 
+const { PORT } = require('./src/config/constants');
 const errorHandler = require('./src/middleware/errorHandler');
 
-// Import routes
+// Import route handlers
 const authRoutes = require('./src/routes/authRoutes');
 const courseRoutes = require('./src/routes/courseRoutes');
 const enrollmentRoutes = require('./src/routes/enrollmentRoutes');
 const fileRoutes = require('./src/routes/fileRoutes');
 
-// Initialize app
+// Initialize Express app
 const app = express();
 
 // Middleware
@@ -21,18 +24,18 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// [FIX] Explicitly redirect root URL to index.html (Login Page)
+// Redirect root URL to login page
 app.get('/', (req, res) => {
     res.redirect('/index.html');
 });
 
-// Routes
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/enrollments', enrollmentRoutes);
 app.use('/api/files', fileRoutes);
 
-// Health check
+// Health check endpoint
 app.get('/health', (req, res) => {
     res.json({ status: 'Server is running' });
 });
