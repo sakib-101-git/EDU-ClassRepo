@@ -1,21 +1,27 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Settings - EDU ClassRepo</title>
-    <link rel="stylesheet" href="css/style.css"> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="app-container">
         <header class="header">
             <div style="display:flex;align-items:center;gap:15px">
+<<<<<<< HEAD
                 <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
                     <i class="fas fa-bars"></i>
                 </button>
                 <a href="dashboard.html" class="logo" style="text-decoration:none">
                     <i class="fas fa-book-reader"></i> EDU ClassRepo
                 </a>
+=======
+                <button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+                <a href="dashboard.html" class="logo"><i class="fas fa-book-reader"></i> EDU ClassRepo</a>
+>>>>>>> 3ca82797355ce6fff3b01307edb6553616d88046
             </div>
             <div class="user-menu">
                 <div class="user-info">
@@ -25,90 +31,79 @@
                 <a href="settings.html" class="profile-avatar"><i class="fas fa-user-circle" style="font-size:24px;color:var(--primary)"></i></a>
             </div>
         </header>
-
         <div class="app-body">
             <nav class="sidebar"></nav>
-
             <main class="main-content">
-                <div class="page-header">
-                    <h1 class="page-title">Account Settings</h1>
-                </div>
-
-                <div style="max-width:600px">
-                    <div class="settings-section">
-                        <div style="display:flex;align-items:center;gap:20px;margin-bottom:24px">
-                            <div style="width:80px;height:80px;border-radius:50%;background:var(--bg-soft);border:3px solid var(--primary);display:flex;align-items:center;justify-content:center">
-                                <i class="fas fa-user" style="font-size:36px;color:var(--primary)"></i>
+                <div class="page-header"><h1 class="page-title">Account Settings</h1></div>
+                <div class="settings-container">
+                    <div class="profile-card">
+                        <div class="profile-header">
+                            <div class="profile-avatar-large">
+                                <i class="fas fa-user"></i>
                             </div>
-                            <div>
-                                <div style="font-size:22px;font-weight:600" id="display-name">-</div>
-                                <div style="font-size:14px;color:var(--text-light);margin-top:4px" id="display-role">-</div>
+                            <div class="profile-info">
+                                <h2 id="display-name">-</h2>
+                                <span class="profile-badge" id="display-role">-</span>
                             </div>
                         </div>
                     </div>
-
                     <div class="settings-section">
-                        <h3><i class="fas fa-user"></i> Account Information</h3>
-                        <div class="info-row">
-                            <div class="info-label">Full Name</div>
-                            <div class="info-value" id="info-name">-</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Student ID</div>
-                            <div class="info-value" id="info-id">-</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Email</div>
-                            <div class="info-value" id="info-email">-</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Department</div>
-                            <div class="info-value" id="info-dept">-</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Role</div>
-                            <div class="info-value" id="info-role">-</div>
+                        <h3><i class="fas fa-id-card"></i> Account Information</h3>
+                        <div class="info-grid">
+                            <div class="info-card">
+                                <div class="info-icon"><i class="fas fa-user"></i></div>
+                                <div class="info-content">
+                                    <span class="info-label">Full Name</span>
+                                    <span class="info-value" id="info-name">-</span>
+                                </div>
+                            </div>
+                            <div class="info-card">
+                                <div class="info-icon"><i class="fas fa-id-badge"></i></div>
+                                <div class="info-content">
+                                    <span class="info-label">Student ID</span>
+                                    <span class="info-value" id="info-id">-</span>
+                                </div>
+                            </div>
+                            <div class="info-card">
+                                <div class="info-icon"><i class="fas fa-envelope"></i></div>
+                                <div class="info-content">
+                                    <span class="info-label">Email</span>
+                                    <span class="info-value" id="info-email">-</span>
+                                </div>
+                            </div>
+                            <div class="info-card">
+                                <div class="info-icon"><i class="fas fa-building"></i></div>
+                                <div class="info-content">
+                                    <span class="info-label">Department</span>
+                                    <span class="info-value" id="info-dept">-</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-
                     <div class="settings-section">
-                        <h3><i class="fas fa-sign-out-alt"></i> Session</h3>
-                        <p style="color:var(--text-medium);margin-bottom:16px">Click below to logout from your account.</p>
-                        <button class="btn btn-danger" onclick="logout()">
-                            <i class="fas fa-sign-out-alt"></i> Logout
-                        </button>
+                        <h3><i class="fas fa-shield-alt"></i> Session</h3>
+                        <p class="section-desc">Securely logout from your account on this device.</p>
+                        <button class="btn btn-danger" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
                     </div>
                 </div>
             </main>
         </div>
     </div>
-
-    <script src="js/app.js"></script> <script>
-        /* Settings - READ user info */
+    <script src="js/app.js"></script>
+    <script>
         const user = checkAuth();
-
-        // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             loadHeader();
             loadSidebar('settings');
-            loadData();
-        });
-
-        // READ - Display user info
-        function loadData() {
             if (!user) return;
-            
             const role = user.role === 'admin' ? 'Administrator' : 'Student';
-            
             document.getElementById('display-name').textContent = user.name;
             document.getElementById('display-role').textContent = role;
-            
             document.getElementById('info-name').textContent = user.name;
             document.getElementById('info-id').textContent = user.id || 'N/A';
             document.getElementById('info-email').textContent = user.email;
             document.getElementById('info-dept').textContent = user.department || 'N/A';
-            document.getElementById('info-role').textContent = role;
-        }
+        });
     </script>
 </body>
 </html>
