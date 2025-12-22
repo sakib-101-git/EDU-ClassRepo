@@ -1,5 +1,14 @@
+/**
+ * Enrollment Controller
+ * Handles course enrollment operations
+ */
+
 const pool = require('../config/database');
 
+/**
+ * Get user's enrolled courses
+ * GET /api/enrollments
+ */
 exports.getUserEnrollments = async (req, res, next) => {
     try {
         const result = await pool.query(
@@ -16,6 +25,10 @@ exports.getUserEnrollments = async (req, res, next) => {
     }
 };
 
+/**
+ * Enroll in a course
+ * POST /api/enrollments
+ */
 exports.enrollCourse = async (req, res, next) => {
     try {
         const { courseId } = req.body;
@@ -31,10 +44,17 @@ exports.enrollCourse = async (req, res, next) => {
         
         res.status(201).json({ message: 'Enrolled successfully' });
     } catch (err) {
+        if (err.code === '23505') {
+            return res.status(400).json({ error: 'Already enrolled in this course' });
+        }
         next(err);
     }
 };
 
+/**
+ * Unenroll from a course
+ * DELETE /api/enrollments/:courseId
+ */
 exports.unenrollCourse = async (req, res, next) => {
     try {
         const { courseId } = req.params;

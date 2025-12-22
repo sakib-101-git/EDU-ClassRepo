@@ -1,336 +1,78 @@
-# EDU ClassRepo
+# EDU ClassRepo - Note Sharing Platform
 
-**East Delta University Note Sharing Platform**
+A web application for East Delta University students to share and download course notes and study materials.
 
-A CRUD web application for students to share and download course materials with admin moderation.
+## Features
 
----
+- **User Authentication**: Student and Admin login system
+- **Course Management**: Browse, enroll, and manage courses
+- **File Sharing**: Upload and download PDF files for courses
+- **Admin Panel**: Approve/reject uploaded files
+- **Responsive Design**: Works on desktop, tablet, and mobile devices
 
-## 📁 Project Structure
+## Technology Stack
+
+### Frontend
+- HTML5
+- CSS3
+- JavaScript (Vanilla)
+- Font Awesome Icons
+
+### Backend
+- Node.js
+- Express.js
+- PostgreSQL Database
+- JWT Authentication
+- Multer (File Upload)
+
+## Project Structure
 
 ```
-Edu ClassRepo Project/
-├── src/                      # Backend source code
-│   ├── config/              # Configuration files
-│   │   ├── database.js      # PostgreSQL connection
-│   │   ├── multer.js        # File upload configuration
-│   │   └── constants.js     # App constants
-│   ├── controllers/         # Business logic (CRUD)
-│   │   ├── authController.js
-│   │   ├── courseController.js
-│   │   ├── enrollmentController.js
-│   │   └── fileController.js
-│   ├── middleware/          # Express middleware
-│   │   ├── auth.js
-│   │   └── errorHandler.js
-│   ├── routes/              # API routes
-│   │   ├── authRoutes.js
-│   │   ├── courseRoutes.js
-│   │   ├── enrollmentRoutes.js
-│   │   └── fileRoutes.js
-│   └── utils/
-│       └── validation.js
-├── public/                  # Frontend assets
-│   ├── index.html          # Login page
-│   ├── dashboard.html      # Main dashboard
-│   ├── my-courses.html     # Student courses
-│   ├── course.html         # Course files
-│   ├── admin.html          # Admin panel
-│   ├── settings.html       # Settings
-│   ├── app.js              # Frontend client
-│   ├── style.css           # Styles
-│   └── login.css
-├── uploads/                # File storage
-├── server.js               # Entry point
-├── package.json
-├── database.sql
-├── .gitignore
-└── README.md
+EDU-ClassRepo/
+├── public/              # Frontend files
+│   ├── css/            # Stylesheets
+│   ├── js/             # JavaScript files
+│   └── *.html          # HTML pages
+├── src/                # Backend source code
+│   ├── config/         # Configuration files
+│   ├── controllers/    # Route controllers
+│   ├── middleware/     # Express middleware
+│   ├── routes/         # API routes
+│   └── utils/          # Utility functions
+├── uploads/            # Uploaded files directory
+├── server.js           # Main server file
+└── package.json        # Dependencies
 ```
 
----
+## Setup Instructions
 
-## 🛠 Backend Architecture (CRUD)
+### 1. Install Dependencies
 
-### Controllers
-- **authController**: Register, login
-- **courseController**: CRUD courses (admin)
-- **enrollmentController**: Manage enrollments
-- **fileController**: Upload, approve, delete files
-
-### API Routes
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `GET /api/courses`
-- `POST /api/courses` (Admin)
-- `PUT /api/courses/:id` (Admin)
-- `DELETE /api/courses/:id` (Admin)
-- `GET /api/enrollments`
-- `POST /api/enrollments`
-- `DELETE /api/enrollments/:courseId`
-- `GET /api/files/:courseId`
-- `POST /api/files`
-- `PUT /api/files/:id/approve` (Admin)
-- `DELETE /api/files/:id`
-
----
-
-## ⚙️ Setup
-
-### Prerequisites
-- Node.js (v14+)
-- PostgreSQL (v12+)
-
-### Installation
 ```bash
 npm install
-psql -U postgres -f database.sql
-npm start
 ```
 
-Server runs at `http://localhost:3000`
+### 2. Database Setup
 
----
-
-## 🔒 Features
-
-- JWT authentication
-- Role-based access control (Student/Admin)
-- Email domain validation
-- Password hashing with bcrypt
-- File upload with moderation
-- CORS protection
-- Centralized error handling
-
----
-
-## 📦 Dependencies
-
-```json
-{
-  "express": "^4.18.2",
-  "pg": "^8.11.3",
-  "bcrypt": "^5.1.1",
-  "jsonwebtoken": "^9.0.2",
-  "multer": "^1.4.5-lts.1",
-  "cors": "^2.8.5"
-}
-```
-
----
-
-## 📝 Environment
-
-Create `.env` file:
-```
-PORT=3000
-DB_HOST=127.0.0.1
-DB_PORT=5432
-DB_NAME=edu_classrepo
-DB_USER=postgres
-DB_PASSWORD=server123
-JWT_SECRET=edu_classrepo_secret_2024
-```
-
----
-
-## 📄 License
-
-ISC
-           ┌───────────┼───────────┐           │
-           ▼           ▼           ▼           ▼
-    ┌────────────┐ ┌──────────┐ ┌──────────┐ ┌────────────┐
-    │my-courses  │ │settings  │ │course    │ │admin.html  │
-    │.html       │ │.html     │ │.html     │ │(Approvals) │
-    │(Enrolled)  │ │(Account) │ │(Files)   │ └────────────┘
-    └────────────┘ └──────────┘ └──────────┘
-
-
-┌─────────────────────────────────────────────────────────────────────────┐
-│                           API ROUTES                                     │
-└─────────────────────────────────────────────────────────────────────────┘
-
-  ┌─────────────────────────────────────────────────────────────────────┐
-  │                         server.js                                    │
-  │                    http://localhost:3000                             │
-  └─────────────────────────────────────────────────────────────────────┘
-                                   │
-       ┌───────────────────────────┼───────────────────────────┐
-       ▼                           ▼                           ▼
-  /api/auth                   /api/courses              /api/files
-       │                           │                           │
-       ├─ POST /register           ├─ GET /                    ├─ GET /:courseId
-       │  → Create account         │  → List all courses       │  → Get course files
-       │                           │                           │
-       └─ POST /login              ├─ GET /:id                 ├─ POST /
-          → Get JWT token          │  → Single course          │  → Upload file
-                                   │                           │
-                                   ├─ POST /                   ├─ PUT /:id/approve
-                                   │  → Create (Admin)         │  → Approve (Admin)
-                                   │                           │
-                                   └─ DELETE /:id              ├─ PUT /:id/rename
-                                      → Delete (Admin)         │  → Rename (Admin)
-                                                               │
-                                                               └─ DELETE /:id
-                                                                  → Delete file
-
-  /api/enrollments
-       │
-       ├─ GET /                    ─→ Get user's enrolled courses
-       ├─ POST /                   ─→ Enroll in course
-       └─ DELETE /:courseId        ─→ Unenroll from course
-
-
-┌─────────────────────────────────────────────────────────────────────────┐
-│                         DATABASE SCHEMA                                  │
-└─────────────────────────────────────────────────────────────────────────┘
-
-  ┌──────────────┐       ┌──────────────┐       ┌──────────────┐
-  │    users     │       │   courses    │       │    files     │
-  ├──────────────┤       ├──────────────┤       ├──────────────┤
-  │ id (PK)      │       │ id (PK)      │       │ id (PK)      │
-  │ student_id   │       │ code         │       │ course_id(FK)│──┐
-  │ name         │       │ title        │       │ file_name    │  │
-  │ email        │       │ department   │       │ file_path    │  │
-  │ password     │       │ instructor   │       │ file_size    │  │
-  │ department   │       │ created_at   │       │ uploaded_by  │──┼──┐
-  │ role         │       └──────────────┘       │ status       │  │  │
-  │ created_at   │              │               │ created_at   │  │  │
-  └──────────────┘              │               └──────────────┘  │  │
-         │                      │                      │          │  │
-         │               ┌──────┴──────┐               │          │  │
-         │               │             │               │          │  │
-         ▼               ▼             ▼               ▼          │  │
-  ┌──────────────────────────────────────────────────────────┐    │  │
-  │                    enrollments                            │    │  │
-  ├──────────────────────────────────────────────────────────┤    │  │
-  │ id (PK)                                                   │    │  │
-  │ user_id (FK) ─────────────────────────────────────────────┼────┘  │
-  │ course_id (FK) ───────────────────────────────────────────┼───────┘
-  │ enrolled_at                                               │
-  └──────────────────────────────────────────────────────────┘
-```
-
----
-
-## ⚙️ Setup Instructions
-
-### 1. Prerequisites
-- **Node.js** (v16+)
-- **PostgreSQL** (v13+)
-
-### 2. Create Database
+1. Create PostgreSQL database:
 ```sql
--- In pgAdmin or psql:
 CREATE DATABASE edu_classrepo;
 ```
 
-### 3. Run Database Schema
-```sql
--- Connect to edu_classrepo, then run:
-\i database.sql
-```
-
-### 4. Configure Database Connection
-Edit `server.js` lines 35-41:
-```javascript
-const pool = new Pool({
-    host: '127.0.0.1',
-    port: 5432,
-    database: 'edu_classrepo',
-    user: 'postgres',
-    password: 'YOUR_PASSWORD'  // ← Change this
-});
-```
-
-### 5. Install & Run
+2. Run database schema:
 ```bash
-npm install
-npm start
+psql -U postgres -d edu_classrepo -f database.sql
 ```
 
-### 6. Open Browser
+3. Create admin users (optional):
+```bash
+node create_admins.js
 ```
-http://localhost:3000
-```
 
----
+### 3. Environment Variables
 
-## 🔐 Default Admin Account
+Create a `.env` file in the root directory:
 
-| Field    | Value                    |
-|----------|--------------------------|
-| Email    | admin@eastdelta.edu.bd   |
-| Password | admin123                 |
-
----
-
-## 📊 API Reference
-
-### Authentication
-| Method | Endpoint           | Body                                    | Description      |
-|--------|--------------------|-----------------------------------------|------------------|
-| POST   | /api/auth/register | name, student_id, email, password, dept | Create account   |
-| POST   | /api/auth/login    | email, password, userType               | Login, get token |
-
-### Courses
-| Method | Endpoint         | Auth | Description          |
-|--------|------------------|------|----------------------|
-| GET    | /api/courses     | No   | List all courses     |
-| GET    | /api/courses/:id | No   | Get single course    |
-| POST   | /api/courses     | Admin| Create course        |
-| DELETE | /api/courses/:id | Admin| Delete course        |
-
-### Enrollments
-| Method | Endpoint                  | Auth | Description     |
-|--------|---------------------------|------|-----------------|
-| GET    | /api/enrollments          | Yes  | My enrollments  |
-| POST   | /api/enrollments          | Yes  | Enroll          |
-| DELETE | /api/enrollments/:courseId| Yes  | Unenroll        |
-
-### Files
-| Method | Endpoint               | Auth | Description           |
-|--------|------------------------|------|-----------------------|
-| GET    | /api/files/:courseId   | No   | Course files          |
-| GET    | /api/files/pending/all | Admin| Pending files         |
-| POST   | /api/files             | Yes  | Upload (multipart)    |
-| PUT    | /api/files/:id/approve | Admin| Approve file          |
-| PUT    | /api/files/:id/rename  | Admin| Rename file           |
-| DELETE | /api/files/:id/reject  | Admin| Reject (delete)       |
-| DELETE | /api/files/:id         | Yes  | Delete own file       |
-
----
-
-## 📦 Departments
-
-| Code | Department                          |
-|------|-------------------------------------|
-| CSE  | Computer Science & Engineering      |
-| EEE  | Electrical & Electronic Engineering |
-| BBA  | Business Administration             |
-| ENG  | English                             |
-| ECO  | Economics                           |
-| GED  | General Education                   |
-
----
-
-## ⚠️ Known Issues & Limitations
-
-### Not Production Ready - Needs:
-
-| Issue | Current | Required for Production |
-|-------|---------|------------------------|
-| **Secrets** | Hardcoded in server.js | Use `.env` file |
-| **HTTPS** | HTTP only | SSL certificate |
-| **Rate Limiting** | None | Add express-rate-limit |
-| **Input Validation** | Basic | Add express-validator |
-| **Password Reset** | Forms exist, no backend | Implement email service |
-| **Process Manager** | None | Use PM2 |
-| **Logging** | Console only | Add winston/morgan |
-
-### Quick Fixes Before Deployment:
-
-1. **Create `.env` file:**
 ```env
 PORT=3000
 DB_HOST=localhost
@@ -341,42 +83,81 @@ DB_PASSWORD=your_password
 JWT_SECRET=your_secret_key_here
 ```
 
-2. **Install dotenv:**
+### 4. Run the Server
+
 ```bash
-npm install dotenv
+npm start
 ```
 
-3. **Update server.js:**
-```javascript
-require('dotenv').config();
+### 5. Access the Application
 
-const pool = new Pool({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    database: process.env.DB_NAME,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD
-});
+Open browser and navigate to: `http://localhost:3000`
 
-const JWT_SECRET = process.env.JWT_SECRET;
-```
+## Default Admin Account
 
----
+- Email: `nazmussakai@gmail.com`
+- Password: Set via `create_admins.js` script (default: `admin123`)
 
-## 🚀 Deployment Checklist
+## CRUD Operations
 
-- [ ] Move credentials to environment variables
-- [ ] Set up SSL/HTTPS
-- [ ] Add rate limiting
-- [ ] Configure production database
-- [ ] Set up file backup for uploads/
-- [ ] Use PM2 for process management
-- [ ] Set up error logging
-- [ ] Implement forgot password email
-- [ ] Add input validation
+### Courses
+- **Create**: Admin can create new courses
+- **Read**: All users can view available courses
+- **Update**: Admin can update course details
+- **Delete**: Admin can delete courses
 
----
+### Files
+- **Create**: Students can upload files (pending approval)
+- **Read**: Users can view and download approved files
+- **Update**: Admin can rename files
+- **Delete**: Admin can delete/reject files
 
-## 📝 License
+### Enrollments
+- **Create**: Students can enroll in courses
+- **Read**: Students can view their enrolled courses
+- **Delete**: Students can unenroll from courses
 
-ISC License - Free to use and modify.
+## API Endpoints
+
+### Authentication
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - Login user
+
+### Courses
+- `GET /api/courses` - Get all courses
+- `GET /api/courses/:id` - Get course by ID
+- `POST /api/courses` - Create course (Admin)
+- `PUT /api/courses/:id` - Update course (Admin)
+- `DELETE /api/courses/:id` - Delete course (Admin)
+
+### Enrollments
+- `GET /api/enrollments` - Get user's enrollments
+- `POST /api/enrollments` - Enroll in course
+- `DELETE /api/enrollments/:courseId` - Unenroll from course
+
+### Files
+- `GET /api/files/:courseId` - Get course files
+- `GET /api/files/pending/all` - Get pending files (Admin)
+- `POST /api/files` - Upload file
+- `PUT /api/files/:id/approve` - Approve file (Admin)
+- `PUT /api/files/:id/rename` - Rename file (Admin)
+- `DELETE /api/files/:id` - Delete file
+- `DELETE /api/files/:id/reject` - Reject file (Admin)
+
+## Database Schema
+
+### Users Table
+- id, student_id, name, email, password, department, gender, semester, role, created_at
+
+### Courses Table
+- id, code, title, department, instructor, created_at
+
+### Enrollments Table
+- id, user_id, course_id, enrolled_at
+
+### Files Table
+- id, course_id, file_name, file_path, file_size, uploaded_by, status, created_at
+
+## License
+
+ISC License

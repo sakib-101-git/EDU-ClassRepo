@@ -19,8 +19,6 @@ CREATE TABLE IF NOT EXISTS users (
     gender VARCHAR(10),
     semester VARCHAR(10),
     role VARCHAR(20) DEFAULT 'student',
-    is_verified BOOLEAN DEFAULT FALSE,      -- New Column
-    verification_token VARCHAR(255),        -- New Column
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

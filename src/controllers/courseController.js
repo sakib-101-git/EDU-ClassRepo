@@ -1,5 +1,14 @@
+/**
+ * Course Controller
+ * Handles CRUD operations for courses
+ */
+
 const pool = require('../config/database');
 
+/**
+ * Get all courses
+ * GET /api/courses
+ */
 exports.getAllCourses = async (req, res, next) => {
     try {
         const result = await pool.query(
@@ -11,6 +20,10 @@ exports.getAllCourses = async (req, res, next) => {
     }
 };
 
+/**
+ * Get course by ID
+ * GET /api/courses/:id
+ */
 exports.getCourseById = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -29,6 +42,10 @@ exports.getCourseById = async (req, res, next) => {
     }
 };
 
+/**
+ * Create new course (Admin only)
+ * POST /api/courses
+ */
 exports.createCourse = async (req, res, next) => {
     try {
         const { code, title, department, instructor } = req.body;
@@ -49,6 +66,10 @@ exports.createCourse = async (req, res, next) => {
     }
 };
 
+/**
+ * Update course (Admin only)
+ * PUT /api/courses/:id
+ */
 exports.updateCourse = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -70,6 +91,10 @@ exports.updateCourse = async (req, res, next) => {
     }
 };
 
+/**
+ * Delete course (Admin only)
+ * DELETE /api/courses/:id
+ */
 exports.deleteCourse = async (req, res, next) => {
     try {
         const { id } = req.params;

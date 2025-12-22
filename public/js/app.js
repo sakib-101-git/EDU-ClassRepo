@@ -1,19 +1,42 @@
-// Frontend API Client
+/**
+ * Frontend Application JavaScript
+ * Handles API calls, authentication, and UI interactions
+ */
+
+// API base URL
 const API = '/api';
 
-// ============= AUTH HELPERS =============
+// ============= AUTHENTICATION HELPERS =============
+
+/**
+ * Get JWT token from localStorage
+ */
 const getToken = () => localStorage.getItem('token');
+
+/**
+ * Get user data from localStorage
+ */
 const getUser = () => {
     const u = localStorage.getItem('user');
     return u ? JSON.parse(u) : null;
 };
+
+/**
+ * Check if user is logged in
+ */
 const isLoggedIn = () => !!getToken();
 
+/**
+ * Logout user and redirect to login
+ */
 const logout = () => {
     localStorage.clear();
     location.href = 'index.html';
 };
 
+/**
+ * Check authentication and redirect if not logged in
+ */
 const checkAuth = () => {
     if (!isLoggedIn()) {
         location.href = 'index.html';
@@ -23,6 +46,10 @@ const checkAuth = () => {
 };
 
 // ============= API HELPER =============
+
+/**
+ * Make API request with authentication
+ */
 const api = async (endpoint, options = {}) => {
     const token = getToken();
     const config = {
@@ -40,9 +67,13 @@ const api = async (endpoint, options = {}) => {
     }
 };
 
-// ============= LOGIN PAGE =============
+// ============= LOGIN PAGE FUNCTIONS =============
+
 let userType = 'student';
 
+/**
+ * Set user type (student or admin) for login
+ */
 const setUserType = (type) => {
     userType = type;
     document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
@@ -59,6 +90,9 @@ const setUserType = (type) => {
     }
 };
 
+/**
+ * Show error message on login page
+ */
 const showError = (msg) => {
     const el = document.getElementById('error-message');
     if (el) {
@@ -67,6 +101,9 @@ const showError = (msg) => {
     }
 };
 
+/**
+ * Show signup form
+ */
 const showSignupForm = () => {
     document.getElementById('login-form').classList.add('hidden');
     document.getElementById('signup-form').classList.remove('hidden');
@@ -76,8 +113,12 @@ const showSignupForm = () => {
     document.getElementById('form-title').textContent = 'Create Account';
     document.getElementById('form-subtitle').textContent = 'Register as a new student';
     document.getElementById('error-message').classList.add('hidden');
+    document.querySelector('.login-form-section').scrollTop = 0;
 };
 
+/**
+ * Show login form
+ */
 const showLoginForm = () => {
     document.getElementById('login-form').classList.remove('hidden');
     document.getElementById('signup-form').classList.add('hidden');
@@ -89,14 +130,15 @@ const showLoginForm = () => {
     document.getElementById('error-message').classList.add('hidden');
 };
 
+/**
+ * Handle user login
+ */
 const handleLogin = async (e) => {
     e.preventDefault();
     const email = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-password').value;
     
-    // [LOGIC UPDATE]
-    // If user is Admin, allow ANY email (Gmail, etc.).
-    // If user is Student, REQUIRE @eastdelta.edu.bd
+    // Validate email domain for students
     if (userType !== 'admin' && !email.endsWith('@eastdelta.edu.bd')) {
         return showError('Use your @eastdelta.edu.bd email');
     }
@@ -106,20 +148,19 @@ const handleLogin = async (e) => {
         body: JSON.stringify({ email, password, userType })
     });
     
-    // This catches "Please verify your email" errors from the backend
     if (data.error) return showError(data.error);
     
+    // Store token and user data
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
     
-    // Redirect based on role
-    if (data.user.role === 'admin') {
-        location.href = 'admin.html';
-    } else {
-        location.href = 'dashboard.html';
-    }
+    // Redirect to dashboard
+    location.href = 'dashboard.html';
 };
 
+/**
+ * Handle user registration
+ */
 const handleSignup = async (e) => {
     e.preventDefault();
     const form = {
@@ -133,7 +174,7 @@ const handleSignup = async (e) => {
         confirm: document.getElementById('signup-confirm').value
     };
     
-    // Strict check for students signing up
+    // Validate form data
     if (!form.email.endsWith('@eastdelta.edu.bd')) {
         return showError('Use your @eastdelta.edu.bd email');
     }
@@ -151,10 +192,26 @@ const handleSignup = async (e) => {
     
     if (data.error) return showError(data.error);
     
-    alert('Account created! Please check your email to verify.');
-    showLoginForm();
+    // Show success message
+    const errorEl = document.getElementById('error-message');
+    errorEl.classList.remove('hidden', 'alert-error');
+    errorEl.classList.add('alert-success');
+    errorEl.style.display = 'block';
+    errorEl.innerHTML = `<i class="fas fa-check-circle"></i> Account created successfully! You can login now.`;
+    
+    // Clear form and show login
+    document.getElementById('signup-form').reset();
+    document.getElementById('signup-password').value = '';
+    document.getElementById('signup-confirm').value = '';
+    
+    setTimeout(() => {
+        showLoginForm();
+    }, 2000);
 };
 
+/**
+ * Toggle password visibility
+ */
 const togglePassword = (inputId, btn) => {
     const input = document.getElementById(inputId);
     const icon = btn.querySelector('i');
@@ -167,10 +224,21 @@ const togglePassword = (inputId, btn) => {
     }
 };
 
-// ============= COURSES =============
+// ============= COURSE FUNCTIONS =============
+
+/**
+ * Load all courses
+ */
 const loadCourses = async () => await api('/courses');
+
+/**
+ * Load user's enrolled courses
+ */
 const loadEnrollments = async () => await api('/enrollments');
 
+/**
+ * Enroll in a course
+ */
 const enrollCourse = async (id) => {
     const data = await api('/enrollments', {
         method: 'POST',
@@ -184,6 +252,9 @@ const enrollCourse = async (id) => {
     return true;
 };
 
+/**
+ * Unenroll from a course
+ */
 const unenrollCourse = async (id) => {
     if (!confirm('Unenroll from this course?')) return false;
     await api(`/enrollments/${id}`, { method: 'DELETE' });
@@ -191,6 +262,9 @@ const unenrollCourse = async (id) => {
     return true;
 };
 
+/**
+ * Delete a course (Admin only)
+ */
 const deleteCourse = async (id) => {
     if (!confirm('Delete this course?')) return false;
     await api(`/courses/${id}`, { method: 'DELETE' });
@@ -198,6 +272,9 @@ const deleteCourse = async (id) => {
     return true;
 };
 
+/**
+ * Create a new course (Admin only)
+ */
 const createCourse = async (code, title, dept, instructor) => {
     return await api('/courses', {
         method: 'POST',
@@ -205,27 +282,47 @@ const createCourse = async (code, title, dept, instructor) => {
     });
 };
 
-// ============= FILES =============
+// ============= FILE FUNCTIONS =============
+
+/**
+ * Load files for a course
+ */
 const loadCourseFiles = async (courseId) => await api(`/files/${courseId}`);
+
+/**
+ * Load all pending files (Admin only)
+ */
 const loadPendingFiles = async () => await api('/files/pending/all');
 
+/**
+ * Approve a file (Admin only)
+ */
 const approveFile = async (id) => {
     const data = await api(`/files/${id}/approve`, { method: 'PUT' });
     return !data.error;
 };
 
+/**
+ * Reject a file (Admin only)
+ */
 const rejectFile = async (id) => {
     if (!confirm('Reject and delete this file?')) return false;
     const data = await api(`/files/${id}/reject`, { method: 'DELETE' });
     return !data.error;
 };
 
+/**
+ * Delete a file
+ */
 const deleteFile = async (id) => {
     if (!confirm('Delete this file?')) return false;
     await api(`/files/${id}`, { method: 'DELETE' });
     return true;
 };
 
+/**
+ * Get file icon based on file extension
+ */
 const getFileIcon = (filename) => {
     const ext = filename.split('.').pop().toLowerCase();
     const icons = {
@@ -244,6 +341,10 @@ const getFileIcon = (filename) => {
 };
 
 // ============= UI HELPERS =============
+
+/**
+ * Load user info in header
+ */
 const loadHeader = () => {
     const user = getUser();
     if (!user) return;
@@ -253,6 +354,9 @@ const loadHeader = () => {
     if (roleEl) roleEl.textContent = user.role === 'admin' ? 'Admin' : 'Student';
 };
 
+/**
+ * Load sidebar navigation
+ */
 const loadSidebar = (active) => {
     const user = getUser();
     const isAdmin = user?.role === 'admin';
@@ -271,11 +375,40 @@ const loadSidebar = (active) => {
     `;
 };
 
+/**
+ * Open modal dialog
+ */
 const openModal = (id) => document.getElementById(id)?.classList.add('active');
+
+/**
+ * Close modal dialog
+ */
 const closeModal = (id) => document.getElementById(id)?.classList.remove('active');
 
+// Close modal when clicking outside
 window.onclick = (e) => {
     if (e.target.classList.contains('modal')) {
         e.target.classList.remove('active');
     }
 };
+
+/**
+ * Toggle mobile sidebar
+ */
+const toggleSidebar = () => {
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) {
+        sidebar.classList.toggle('active');
+    }
+};
+
+// Close sidebar when clicking outside on mobile
+document.addEventListener('click', (e) => {
+    const sidebar = document.querySelector('.sidebar');
+    const menuToggle = document.querySelector('.menu-toggle');
+    if (sidebar && window.innerWidth <= 900) {
+        if (!sidebar.contains(e.target) && !menuToggle?.contains(e.target) && sidebar.classList.contains('active')) {
+            sidebar.classList.remove('active');
+        }
+    }
+});

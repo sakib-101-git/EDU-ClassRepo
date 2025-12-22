@@ -9,9 +9,14 @@
 <body>
     <div class="app-container">
         <header class="header">
-            <a href="dashboard.html" class="logo" style="text-decoration:none">
-                <i class="fas fa-book-reader"></i> EDU ClassRepo
-            </a>
+            <div style="display:flex;align-items:center;gap:15px">
+                <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <a href="dashboard.html" class="logo" style="text-decoration:none">
+                    <i class="fas fa-book-reader"></i> EDU ClassRepo
+                </a>
+            </div>
             <div class="user-menu">
                 <div class="user-info">
                     <div class="user-name" id="user-name">-</div>
