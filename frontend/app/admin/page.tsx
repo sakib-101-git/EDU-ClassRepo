@@ -1,21 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
-  materials, semesters, courses, departments, ApiError,
-  type Material, type Page, type Semester, type Course, type Department,
+  materials, courses, departments, ApiError,
+  type Material, type Page, type Course, type Department,
 } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import AuthGuard from "@/components/auth-guard";
 import Navbar from "@/components/navbar";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -157,7 +155,8 @@ function CoursesTab() {
   const [depts, setDepts]   = useState<Department[]>([]);
   const [courseList, setCourseList] = useState<Page<Course> | null>(null);
   const [page, setPage]     = useState(0);
-  const [deptFilter, setDeptFilter] = useState("__ALL__");
+  const [searchInput, setSearchInput] = useState("");
+  const [query, setQuery]   = useState("");
   const [loading, setLoading] = useState(false);
 
   // Add course form
@@ -170,15 +169,11 @@ function CoursesTab() {
   const fetchCourses = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await courses.list({
-        dept: deptFilter !== "__ALL__" ? deptFilter : undefined,
-        page,
-        size: 15,
-      });
+      const data = await courses.list({ search: query || undefined, page, size: 15 });
       setCourseList(data);
     } catch { /* ignore */ }
     finally { setLoading(false); }
-  }, [deptFilter, page]);
+  }, [query, page]);
 
   useEffect(() => { departments.list().then(setDepts).catch(() => {}); }, []);
   useEffect(() => { fetchCourses(); }, [fetchCourses]);
@@ -224,11 +219,11 @@ function CoursesTab() {
           <form onSubmit={handleAdd} className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
             <div className="space-y-1">
               <Label className="text-xs">Course Code</Label>
-              <Input placeholder="e.g. CSE 4101" value={code} onChange={(e) => setCode(e.target.value)} />
+              <Input value={code} onChange={(e) => setCode(e.target.value)} />
             </div>
             <div className="space-y-1 lg:col-span-2">
               <Label className="text-xs">Course Title</Label>
-              <Input placeholder="e.g. Machine Learning" value={title} onChange={(e) => setTitle(e.target.value)} />
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} />
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Department</Label>
@@ -250,7 +245,12 @@ function CoursesTab() {
                 </SelectContent>
               </Select>
             </div>
-            <Button type="submit" disabled={adding} className="sm:col-span-2 lg:col-span-1">
+            <Button
+              type="submit"
+              disabled={adding}
+              variant="outline"
+              className="sm:col-span-2 lg:col-span-1 border-2 border-[#A53030] text-[#A53030] bg-white hover:bg-[#A53030] hover:text-white font-semibold transition-colors"
+            >
               {adding ? "Adding…" : "+ Add Course"}
             </Button>
           </form>
@@ -259,20 +259,33 @@ function CoursesTab() {
 
       {/* Course list */}
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-medium text-muted-foreground">
-            {courseList ? `${courseList.totalElements} courses total` : "Loading…"}
-          </p>
-          <Select value={deptFilter} onValueChange={(v) => { if (v !== null) { setDeptFilter(v); setPage(0); } }}>
-            <SelectTrigger className="w-44 h-8 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__ALL__">All Departments</SelectItem>
-              {depts.map((d) => <SelectItem key={d.code} value={d.code}>{d.code}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
+        <form
+          onSubmit={(e) => { e.preventDefault(); setQuery(searchInput); setPage(0); }}
+          className="flex gap-2 mb-4"
+        >
+          <Input
+            placeholder="Search by code or title…"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="max-w-sm"
+          />
+          <Button
+            type="submit"
+            size="sm"
+            variant="outline"
+            className="border-2 border-[#A53030] text-[#A53030] bg-white hover:bg-[#A53030] hover:text-white font-semibold transition-colors"
+          >
+            Search
+          </Button>
+          {query && (
+            <Button type="button" variant="ghost" size="sm" onClick={() => { setSearchInput(""); setQuery(""); setPage(0); }}>
+              Clear
+            </Button>
+          )}
+        </form>
+        <p className="text-xs text-muted-foreground mb-3">
+          {courseList ? `${courseList.totalElements} course${courseList.totalElements !== 1 ? "s" : ""} found` : "Loading…"}
+        </p>
 
         <div className="space-y-1.5">
           {loading && Array.from({ length: 5 }).map((_, i) => (
@@ -309,125 +322,6 @@ function CoursesTab() {
   );
 }
 
-// ── Semester Routine tab ──────────────────────────────────────────────────────
-function RoutineTab() {
-  const [semList, setSemList]   = useState<Semester[]>([]);
-  const [ingesting, setIngesting] = useState(false);
-  const [result, setResult]     = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [semCode, setSemCode]   = useState("");
-  const [semName, setSemName]   = useState("");
-  const [setActive, setSetActive] = useState(true);
-
-  useEffect(() => { semesters.list().then(setSemList).catch(() => {}); }, []);
-
-  async function handleIngest(e: React.FormEvent) {
-    e.preventDefault();
-    const file = fileRef.current?.files?.[0];
-    if (!file || !semCode.trim() || !semName.trim()) {
-      toast.error("Fill all fields and select a .docx file");
-      return;
-    }
-    setIngesting(true);
-    setResult(null);
-    try {
-      const res = await semesters.ingest(file, semCode.trim(), semName.trim(), setActive);
-      setResult(`${res.message} — ${res.slotsCreated} slots created`);
-      toast.success("Routine ingested successfully!");
-      semesters.list().then(setSemList).catch(() => {});
-      setSemCode(""); setSemName("");
-      if (fileRef.current) fileRef.current.value = "";
-    } catch (err) {
-      const msg = err instanceof ApiError ? err.message : "Ingestion failed";
-      toast.error(msg);
-      setResult(`Error: ${msg}`);
-    } finally {
-      setIngesting(false);
-    }
-  }
-
-  return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Upload Semester Routine</CardTitle>
-          <p className="text-xs text-muted-foreground">Upload the EDU routine .docx file to populate the timetable.</p>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleIngest} className="space-y-4">
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>Semester Code</Label>
-                <Input placeholder="e.g. SUMMER-2026" value={semCode} onChange={(e) => setSemCode(e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Semester Name</Label>
-                <Input placeholder="e.g. Summer 2026" value={semName} onChange={(e) => setSemName(e.target.value)} />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Routine .docx File</Label>
-              <input
-                ref={fileRef}
-                type="file"
-                accept=".docx"
-                className="block w-full text-sm text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-secondary file:text-secondary-foreground hover:file:bg-secondary/80"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="setActive"
-                checked={setActive}
-                onChange={(e) => setSetActive(e.target.checked)}
-                className="h-4 w-4 accent-primary"
-              />
-              <Label htmlFor="setActive" className="cursor-pointer">Set as active semester</Label>
-            </div>
-            <Button type="submit" disabled={ingesting}>
-              {ingesting ? "Ingesting…" : "Upload & Ingest"}
-            </Button>
-            {result && (
-              <p className={`text-sm ${result.startsWith("Error") ? "text-destructive" : "text-green-600"}`}>
-                {result}
-              </p>
-            )}
-          </form>
-        </CardContent>
-      </Card>
-
-      {semList.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Semesters</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {semList.map((s) => (
-              <div key={s.id} className="flex items-center justify-between text-sm py-1">
-                <div>
-                  <span className="font-medium">{s.name}</span>
-                  <span className="text-muted-foreground ml-1.5">({s.code})</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {s.active
-                    ? <Badge className="text-xs">Active</Badge>
-                    : (
-                      <Button size="sm" variant="outline" className="h-6 text-xs"
-                        onClick={() => semesters.activate(s.id).then(() => semesters.list().then(setSemList)).catch(() => {})}>
-                        Set Active
-                      </Button>
-                    )
-                  }
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
 // ── Main admin page ───────────────────────────────────────────────────────────
 export default function AdminPage() {
   const user = useAuthStore((s) => s.user);
@@ -453,7 +347,7 @@ export default function AdminPage() {
           <div className="mb-6">
             <h1 className="text-2xl font-bold">Admin Panel</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Manage course materials, courses, and semester routines.
+              Manage course materials and courses.
             </p>
           </div>
 
@@ -461,7 +355,6 @@ export default function AdminPage() {
             <TabsList className="mb-6">
               <TabsTrigger value="approvals">Pending Approvals</TabsTrigger>
               <TabsTrigger value="courses">Course Management</TabsTrigger>
-              <TabsTrigger value="routine">Semester Routine</TabsTrigger>
             </TabsList>
 
             <TabsContent value="approvals">
@@ -470,10 +363,6 @@ export default function AdminPage() {
 
             <TabsContent value="courses">
               <CoursesTab />
-            </TabsContent>
-
-            <TabsContent value="routine">
-              <RoutineTab />
             </TabsContent>
           </Tabs>
         </main>

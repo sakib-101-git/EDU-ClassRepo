@@ -13,9 +13,8 @@ import { Label } from "@/components/ui/label";
 
 const FEATURES = [
   "Course Repository & Materials",
-  "Semester Routine Builder",
-  "CGPA Calculator",
   "Cover Page Creator",
+  "Enroll & Track Your Courses",
 ];
 
 export default function LoginPage() {
@@ -90,7 +89,7 @@ export default function LoginPage() {
         <div className="relative z-10">
           <h1
             className="text-4xl sm:text-5xl xl:text-6xl font-bold text-white leading-tight mb-3 lg:mb-5"
-            style={{ fontFamily: "var(--font-playfair)" }}
+            style={{ fontFamily: "var(--font-montserrat)" }}
           >
             Your Academic<br />Gateway
           </h1>
@@ -115,19 +114,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Bottom credit */}
-        <p className="relative z-10 text-white/30 text-xs">
-          Built &amp; run by{" "}
-          <a
-            href="#"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-white/50 transition-colors"
-          >
-            @syed_nazmus_sakib
-          </a>
-        </p>
-
       </div>
 
       {/* ── Form panel (below on mobile, right on desktop) ───────── */}
@@ -135,7 +121,7 @@ export default function LoginPage() {
         <div className="w-full max-w-[400px]">
           <h2
             className="text-3xl font-bold text-foreground mb-1"
-            style={{ fontFamily: "var(--font-playfair)" }}
+            style={{ fontFamily: "var(--font-montserrat)" }}
           >
             Welcome back
           </h2>

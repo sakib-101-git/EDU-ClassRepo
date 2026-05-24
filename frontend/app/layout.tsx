@@ -1,29 +1,33 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display, Geist_Mono, Nunito } from "next/font/google";
+import { Montserrat, Inter, Saira, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-const inter = Inter({ variable: "--font-sans", subsets: ["latin"] });
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
+});
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+});
+const saira = Saira({
+  variable: "--font-saira",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
-const nunito = Nunito({
-  variable: "--font-nunito",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-});
 
 export const metadata: Metadata = {
   title: "EDU ClassRepo — East Delta University",
-  description: "Course materials, routines, and academic tools for EDU students",
+  description: "Course materials and academic tools for EDU students",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable} ${geistMono.variable} ${nunito.variable} h-full antialiased`}>
+    <html lang="en" className={`${montserrat.variable} ${inter.variable} ${saira.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         {children}
         <Toaster richColors position="top-right" />

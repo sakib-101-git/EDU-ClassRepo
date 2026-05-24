@@ -183,45 +183,6 @@ export const departments = {
   list: () => request<Department[]>("/api/departments"),
 };
 
-// ── Semesters ─────────────────────────────────────────────────────────────────
-export const semesters = {
-  list:   () => request<Semester[]>("/api/semesters"),
-  active: () => request<Semester>("/api/semesters/active"),
-
-  ingest: (file: File, semesterCode: string, semesterName: string, setActive: boolean) => {
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("semesterCode", semesterCode);
-    fd.append("semesterName", semesterName);
-    fd.append("setActive", String(setActive));
-    return request<{ message: string; slotsCreated: number }>("/api/semesters/ingest", { method: "POST", body: fd });
-  },
-
-  activate: (id: string) => request<void>(`/api/semesters/${id}/activate`, { method: "PUT" }),
-};
-
-// ── Routine ───────────────────────────────────────────────────────────────────
-export const routine = {
-  get: (semesterId?: string) => {
-    const q = semesterId ? `?semesterId=${semesterId}` : "";
-    return request<RoutineSlot[]>(`/api/routine${q}`);
-  },
-
-  createCustom: (body: { semesterId: string; name: string; slotIds: string[] }) =>
-    request<CustomRoutine>("/api/routine/custom", { method: "POST", body: JSON.stringify(body) }),
-
-  myCustom: () => request<CustomRoutine[]>("/api/routine/custom/mine"),
-};
-
-// ── CGPA ──────────────────────────────────────────────────────────────────────
-export const cgpa = {
-  scale: () => request<Record<string, number>>("/api/cgpa/scale"),
-  calculate: (courses: { grade: string; credits: number }[]) =>
-    request<{ cgpa: number; totalCredits: number; standing: string }>("/api/cgpa/calculate", {
-      method: "POST",
-      body: JSON.stringify({ courses }),
-    }),
-};
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 export interface RegisterRequest {
@@ -300,35 +261,6 @@ export interface Material {
   createdAt: string;
 }
 
-export interface Semester {
-  id: string;
-  code: string;
-  name: string;
-  active: boolean;
-  startDate?: string;
-  endDate?: string;
-}
-
-export interface RoutineSlot {
-  id: string;
-  semester: Semester;
-  course: Course;
-  faculty?: FacultyMember;
-  section: string;
-  dayOfWeek: "SATURDAY" | "SUNDAY" | "MONDAY" | "TUESDAY" | "WEDNESDAY" | "THURSDAY";
-  startTime: string;
-  endTime: string;
-  room?: string;
-  classType: "THEORY" | "LAB";
-}
-
-export interface CustomRoutine {
-  id: string;
-  name: string;
-  semester: Semester;
-  slots: RoutineSlot[];
-  createdAt: string;
-}
 
 export interface Page<T> {
   content: T[];

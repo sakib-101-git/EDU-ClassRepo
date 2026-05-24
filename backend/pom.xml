@@ -21,7 +21,6 @@
         <java.version>21</java.version>
         <jjwt.version>0.12.6</jjwt.version>
         <mapstruct.version>1.6.3</mapstruct.version>
-        <poi.version>5.3.0</poi.version>
         <aws.sdk.version>2.28.0</aws.sdk.version>
     </properties>
 
@@ -96,12 +95,6 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- Apache POI — .docx parsing -->
-        <dependency>
-            <groupId>org.apache.poi</groupId>
-            <artifactId>poi-ooxml</artifactId>
-            <version>${poi.version}</version>
-        </dependency>
 
         <!-- AWS SDK v2 — Cloudflare R2 (S3-compatible) -->
         <dependency>

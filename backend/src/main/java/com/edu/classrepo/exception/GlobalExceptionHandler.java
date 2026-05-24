@@ -38,14 +38,6 @@ public class GlobalExceptionHandler {
         return pd;
     }
 
-    @ExceptionHandler(RoutineParseException.class)
-    public ProblemDetail handleRoutineParse(RoutineParseException ex) {
-        var pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
-        pd.setType(URI.create("https://problems.edu-classrepo.app/routine-parse-error"));
-        pd.setProperty("parseErrors", ex.getErrors());
-        return pd;
-    }
-
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ProblemDetail handleValidation(MethodArgumentNotValidException ex) {
         Map<String, String> errors = ex.getBindingResult().getFieldErrors().stream()

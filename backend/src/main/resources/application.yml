@@ -72,5 +72,3 @@ app:
   email:
     allowed-domain: eastdelta.edu.bd
 
-  routine:
-    upload-dir: ${ROUTINE_UPLOAD_DIR:data/routines}

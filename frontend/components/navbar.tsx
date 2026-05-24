@@ -15,17 +15,13 @@ import {
 import { toast } from "sonner";
 
 const STUDENT_LINKS = [
-  { href: "/dashboard",      label: "Courses" },
-  { href: "/my-courses",     label: "My Courses" },
-  { href: "/routine",        label: "Routine" },
-  { href: "/routine/custom", label: "My Schedule" },
-  { href: "/cgpa",           label: "CGPA" },
-  { href: "/cover-page",     label: "Cover Page" },
+  { href: "/dashboard",  label: "Courses" },
+  { href: "/my-courses", label: "My Courses" },
+  { href: "/cover-page", label: "Cover Page" },
 ];
 
 const ADMIN_LINKS = [
   { href: "/dashboard", label: "Courses" },
-  { href: "/routine",   label: "Routine" },
   { href: "/admin",     label: "Admin Panel" },
 ];
 
@@ -70,15 +66,9 @@ export default function Navbar() {
               className="h-8 w-8 rounded-full object-cover ring-1 ring-white/30"
             />
           </Link>
-          <a
-            href="https://eastdelta.edu.bd"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden sm:block leading-none hover:opacity-80 transition-opacity"
-          >
-            <p className="font-bold text-[13px] tracking-wide">East Delta University</p>
-            <p className="text-primary-foreground/60 text-[10px] tracking-wider uppercase">Academic Hub</p>
-          </a>
+          <div className="hidden sm:block leading-none">
+            <p className="font-bold text-[13px] tracking-wide" style={{ fontFamily: "var(--font-montserrat)" }}>East Delta University</p>
+          </div>
           <Link href="/dashboard" className="sm:hidden font-bold text-base hover:opacity-90 transition-opacity">
             EDU
           </Link>

@@ -131,27 +131,18 @@ export default function DashboardPage() {
                           <div className="flex items-baseline gap-1.5 mb-1">
                             <span
                               className={`font-bold text-[15px] leading-tight ${colors.title}`}
-                              style={{ fontFamily: "var(--font-nunito)" }}
+                              style={{ fontFamily: "var(--font-montserrat)" }}
                             >
                               {course.code}
                             </span>
-                            <span
-                              className="text-[13px] font-semibold text-foreground/50"
-                              style={{ fontFamily: "var(--font-nunito)" }}
-                            >
+                            <span className="text-[13px] font-medium text-foreground/50">
                               · {course.creditHours} cr
                             </span>
                           </div>
-                          <p
-                            className="text-[13px] font-semibold text-foreground/70 line-clamp-2 leading-snug"
-                            style={{ fontFamily: "var(--font-nunito)" }}
-                          >
+                          <p className="text-[13px] font-medium text-foreground/70 line-clamp-2 leading-snug">
                             {course.title}
                           </p>
-                          <p
-                            className="text-xs text-muted-foreground mt-1"
-                            style={{ fontFamily: "var(--font-nunito)" }}
-                          >
+                          <p className="text-xs text-muted-foreground mt-1">
                             {course.department.code}
                           </p>
                         </div>

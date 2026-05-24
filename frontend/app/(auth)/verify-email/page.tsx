@@ -129,7 +129,7 @@ export default function VerifyEmailPage() {
         <div className="relative z-10 text-center">
           <h1
             className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-3"
-            style={{ fontFamily: "var(--font-playfair)" }}
+            style={{ fontFamily: "var(--font-montserrat)" }}
           >
             One step<br />to go
           </h1>
@@ -151,7 +151,7 @@ export default function VerifyEmailPage() {
         <div className="w-full max-w-[380px]">
           <h2
             className="text-3xl font-bold text-foreground mb-1"
-            style={{ fontFamily: "var(--font-playfair)" }}
+            style={{ fontFamily: "var(--font-montserrat)" }}
           >
             Verify your email
           </h2>

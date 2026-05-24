@@ -92,13 +92,13 @@ export default function RegisterPage() {
         <div className="relative z-10">
           <h1
             className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-3 lg:mb-4"
-            style={{ fontFamily: "var(--font-playfair)" }}
+            style={{ fontFamily: "var(--font-montserrat)" }}
           >
             Join to learn<br />and grow
           </h1>
           <p className="text-white/65 text-sm leading-relaxed max-w-[260px] mx-auto">
-            Register with your university email to access course materials,
-            routines, and academic tools.
+            Register with your university email to access course materials
+            and academic tools.
           </p>
         </div>
 
@@ -121,7 +121,7 @@ export default function RegisterPage() {
         <div className="w-full max-w-[420px] py-4">
           <h2
             className="text-3xl font-bold text-foreground mb-1"
-            style={{ fontFamily: "var(--font-playfair)" }}
+            style={{ fontFamily: "var(--font-montserrat)" }}
           >
             Create Account
           </h2>
