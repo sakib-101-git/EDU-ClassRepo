@@ -1,0 +1,25 @@
+#!/bin/sh
+# Maven Wrapper startup script for *nix systems
+# Automatically downloads Apache Maven 3.9.9 if not present.
+
+set -e
+
+MAVEN_VERSION="3.9.9"
+MAVEN_HOME="${HOME}/.m2/wrapper/dists/apache-maven-${MAVEN_VERSION}"
+MAVEN_BIN="${MAVEN_HOME}/bin/mvn"
+MAVEN_URL="https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/${MAVEN_VERSION}/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
+
+if [ ! -f "${MAVEN_BIN}" ]; then
+  mkdir -p "${MAVEN_HOME}"
+  echo "Downloading Apache Maven ${MAVEN_VERSION}..."
+  if command -v curl > /dev/null; then
+    curl -fsSL "${MAVEN_URL}" | tar -xz -C "${HOME}/.m2/wrapper/dists/" --strip-components=1 -C "${MAVEN_HOME}"
+  elif command -v wget > /dev/null; then
+    wget -qO- "${MAVEN_URL}" | tar -xz -C "${HOME}/.m2/wrapper/dists/" --strip-components=1 -C "${MAVEN_HOME}"
+  else
+    echo "Error: Neither curl nor wget found. Install Maven manually."
+    exit 1
+  fi
+fi
+
+exec "${MAVEN_BIN}" "$@"

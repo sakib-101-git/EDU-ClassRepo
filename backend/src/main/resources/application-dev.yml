@@ -1,0 +1,9 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+
+app:
+  cors:
+    allowed-origins: http://localhost:3000,http://localhost:3001
