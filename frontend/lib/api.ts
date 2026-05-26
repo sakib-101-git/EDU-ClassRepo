@@ -154,11 +154,13 @@ export const materials = {
   pending: (page = 0) =>
     request<Page<Material>>(`/api/materials/pending?page=${page}&size=20`),
 
-  upload: (file: File, courseId: string, facultyId?: string) => {
+  upload: (file: File, courseId: string, opts?: { facultyId?: string; facultyName?: string; facultyShortForm?: string }) => {
     const fd = new FormData();
     fd.append("file", file);
     fd.append("courseId", courseId);
-    if (facultyId) fd.append("facultyId", facultyId);
+    if (opts?.facultyId)        fd.append("facultyId",        opts.facultyId);
+    if (opts?.facultyName)      fd.append("facultyName",      opts.facultyName);
+    if (opts?.facultyShortForm) fd.append("facultyShortForm", opts.facultyShortForm);
     return request<{ message: string; status: string }>("/api/materials/upload", { method: "POST", body: fd });
   },
 

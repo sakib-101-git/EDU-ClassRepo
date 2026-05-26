@@ -77,6 +77,8 @@ public class MaterialController {
             @RequestParam("file") MultipartFile file,
             @RequestParam("courseId") UUID courseId,
             @RequestParam(value = "facultyId", required = false) UUID facultyId,
+            @RequestParam(value = "facultyName", required = false) String facultyName,
+            @RequestParam(value = "facultyShortForm", required = false) String facultyShortForm,
             @AuthenticationPrincipal UUID userId
     ) throws IOException {
         if (file.isEmpty()) throw new BadRequestException("File is empty");
@@ -90,9 +92,21 @@ public class MaterialController {
         var uploader = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
-        var faculty = facultyId != null
-                ? facultyRepository.findById(facultyId).orElse(null)
-                : null;
+        com.edu.classrepo.entity.Faculty faculty = null;
+        if (facultyId != null) {
+            faculty = facultyRepository.findById(facultyId).orElse(null);
+        } else if (facultyShortForm != null && !facultyShortForm.isBlank()) {
+            String shortForm = facultyShortForm.trim().toUpperCase();
+            String fullName  = (facultyName != null && !facultyName.isBlank())
+                    ? facultyName.trim() : shortForm;
+            faculty = facultyRepository.findByShortFormIgnoreCase(shortForm)
+                    .orElseGet(() -> facultyRepository.save(
+                            com.edu.classrepo.entity.Faculty.builder()
+                                    .shortForm(shortForm)
+                                    .name(fullName)
+                                    .department(course.getDepartment())
+                                    .build()));
+        }
 
         String url = storageService.uploadMaterial(file, courseId, userId);
 

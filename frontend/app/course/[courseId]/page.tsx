@@ -47,10 +47,13 @@ export default function CoursePage({ params }: { params: Promise<{ courseId: str
   const [facultyDropdown, setFacultyDropdown] = useState(false);
   const [page, setPage]               = useState(0);
   const [loading, setLoading]         = useState(false);
-  const [uploadOpen, setUploadOpen]         = useState(false);
-  const [uploadFacultyId, setUploadFacultyId] = useState("");
+  const [uploadOpen, setUploadOpen]               = useState(false);
+  const [uploadFacultyId, setUploadFacultyId]       = useState("");
   const [uploadFacultySearch, setUploadFacultySearch] = useState("");
-  const [uploadFacultyDrop, setUploadFacultyDrop]     = useState(false);
+  const [uploadFacultyDrop, setUploadFacultyDrop]   = useState(false);
+  const [addNewFaculty, setAddNewFaculty]           = useState(false);
+  const [newFacultyName, setNewFacultyName]         = useState("");
+  const [newFacultyShortForm, setNewFacultyShortForm] = useState("");
   const [renameOpen, setRenameOpen]   = useState<{ id: string; name: string } | null>(null);
   const [newName, setNewName]         = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
@@ -78,17 +81,35 @@ export default function CoursePage({ params }: { params: Promise<{ courseId: str
 
   useEffect(() => { fetchMaterials(); }, [fetchMaterials]);
 
+  function resetUploadForm() {
+    setUploadFacultyId("");
+    setUploadFacultySearch("");
+    setAddNewFaculty(false);
+    setNewFacultyName("");
+    setNewFacultyShortForm("");
+  }
+
   async function handleUpload(e: React.FormEvent) {
     e.preventDefault();
     const file = fileRef.current?.files?.[0];
     if (!file) return;
-    if (!uploadFacultyId) { toast.error("Please select a faculty member"); return; }
+
+    if (addNewFaculty) {
+      if (!newFacultyShortForm.trim()) { toast.error("Abbreviation is required"); return; }
+    } else {
+      if (!uploadFacultyId) { toast.error("Please select a faculty member"); return; }
+    }
+
     try {
-      const res = await materials.upload(file, course!.id, uploadFacultyId);
+      const opts = addNewFaculty
+        ? { facultyName: newFacultyName, facultyShortForm: newFacultyShortForm }
+        : { facultyId: uploadFacultyId };
+      const res = await materials.upload(file, course!.id, opts);
       toast.success(res.message);
       setUploadOpen(false);
-      setUploadFacultyId("");
-      setUploadFacultySearch("");
+      resetUploadForm();
+      // Refresh faculty list so the new member appears in the filter
+      if (addNewFaculty) faculty.list().then(setFacultyList).catch(() => {});
       fetchMaterials();
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Upload failed");
@@ -133,7 +154,7 @@ export default function CoursePage({ params }: { params: Promise<{ courseId: str
                 </p>
               )}
             </div>
-            <Dialog open={uploadOpen} onOpenChange={(o) => { setUploadOpen(o); if (!o) { setUploadFacultyId(""); setUploadFacultySearch(""); } }}>
+            <Dialog open={uploadOpen} onOpenChange={(o) => { setUploadOpen(o); if (!o) resetUploadForm(); }}>
               <DialogTrigger>
                 <Button>Upload File</Button>
               </DialogTrigger>
@@ -144,57 +165,82 @@ export default function CoursePage({ params }: { params: Promise<{ courseId: str
                 <form onSubmit={handleUpload} className="space-y-4 mt-2">
                   {/* Faculty picker */}
                   <div>
-                    <label className="text-sm font-medium mb-1.5 block">Faculty member <span className="text-destructive">*</span></label>
-                    <div className="relative">
-                      <Input
-                        placeholder="Search faculty name or short form…"
-                        value={
-                          uploadFacultySearch ||
-                          (uploadFacultyId
-                            ? (() => { const f = facultyList.find(x => x.id === uploadFacultyId); return f ? `${f.shortForm} — ${f.name}` : ""; })()
-                            : "")
-                        }
-                        onChange={(e) => {
-                          setUploadFacultySearch(e.target.value);
-                          if (uploadFacultyId) setUploadFacultyId("");
-                          setUploadFacultyDrop(true);
-                        }}
-                        onFocus={() => setUploadFacultyDrop(true)}
-                        onBlur={() => setTimeout(() => setUploadFacultyDrop(false), 150)}
-                      />
-                      {uploadFacultyDrop && (
-                        <div className="absolute z-50 top-full mt-1 w-full bg-popover border rounded-md shadow-md max-h-44 overflow-y-auto">
-                          {facultyList
-                            .filter(f =>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-sm font-medium">Faculty member <span className="text-destructive">*</span></label>
+                      <button
+                        type="button"
+                        className="text-xs text-primary hover:underline"
+                        onClick={() => { setAddNewFaculty(!addNewFaculty); setUploadFacultyId(""); setUploadFacultySearch(""); setNewFacultyName(""); setNewFacultyShortForm(""); }}
+                      >
+                        {addNewFaculty ? "← Select existing" : "+ Add new faculty"}
+                      </button>
+                    </div>
+
+                    {addNewFaculty ? (
+                      <div className="space-y-2">
+                        <Input
+                          placeholder="Full name (e.g. Mr. John Doe)"
+                          value={newFacultyName}
+                          onChange={(e) => setNewFacultyName(e.target.value)}
+                        />
+                        <Input
+                          placeholder="Abbreviation (e.g. JD) *"
+                          value={newFacultyShortForm}
+                          onChange={(e) => setNewFacultyShortForm(e.target.value.toUpperCase())}
+                        />
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        <Input
+                          placeholder="Search faculty name or short form…"
+                          value={
+                            uploadFacultySearch ||
+                            (uploadFacultyId
+                              ? (() => { const f = facultyList.find(x => x.id === uploadFacultyId); return f ? `${f.shortForm} — ${f.name}` : ""; })()
+                              : "")
+                          }
+                          onChange={(e) => {
+                            setUploadFacultySearch(e.target.value);
+                            if (uploadFacultyId) setUploadFacultyId("");
+                            setUploadFacultyDrop(true);
+                          }}
+                          onFocus={() => setUploadFacultyDrop(true)}
+                          onBlur={() => setTimeout(() => setUploadFacultyDrop(false), 150)}
+                        />
+                        {uploadFacultyDrop && (
+                          <div className="absolute z-50 top-full mt-1 w-full bg-popover border rounded-md shadow-md max-h-44 overflow-y-auto">
+                            {facultyList
+                              .filter(f =>
+                                !uploadFacultySearch.trim() ||
+                                f.name.toLowerCase().includes(uploadFacultySearch.toLowerCase()) ||
+                                f.shortForm.toLowerCase().includes(uploadFacultySearch.toLowerCase())
+                              )
+                              .map(f => (
+                                <button
+                                  type="button"
+                                  key={f.id}
+                                  className="w-full text-left px-3 py-2 text-sm hover:bg-accent"
+                                  onMouseDown={() => {
+                                    setUploadFacultyId(f.id);
+                                    setUploadFacultySearch("");
+                                    setUploadFacultyDrop(false);
+                                  }}
+                                >
+                                  {f.shortForm} — {f.name}
+                                </button>
+                              ))
+                            }
+                            {facultyList.filter(f =>
                               !uploadFacultySearch.trim() ||
                               f.name.toLowerCase().includes(uploadFacultySearch.toLowerCase()) ||
                               f.shortForm.toLowerCase().includes(uploadFacultySearch.toLowerCase())
-                            )
-                            .map(f => (
-                              <button
-                                type="button"
-                                key={f.id}
-                                className="w-full text-left px-3 py-2 text-sm hover:bg-accent"
-                                onMouseDown={() => {
-                                  setUploadFacultyId(f.id);
-                                  setUploadFacultySearch("");
-                                  setUploadFacultyDrop(false);
-                                }}
-                              >
-                                {f.shortForm} — {f.name}
-                              </button>
-                            ))
-                          }
-                          {facultyList.filter(f =>
-                            !uploadFacultySearch.trim() ||
-                            f.name.toLowerCase().includes(uploadFacultySearch.toLowerCase()) ||
-                            f.shortForm.toLowerCase().includes(uploadFacultySearch.toLowerCase())
-                          ).length === 0 && (
-                            <p className="px-3 py-2 text-sm text-muted-foreground">No faculty found</p>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                            ).length === 0 && (
+                              <p className="px-3 py-2 text-sm text-muted-foreground">No faculty found</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <input
