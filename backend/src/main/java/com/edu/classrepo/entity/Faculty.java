@@ -22,7 +22,7 @@ public class Faculty {
     @Column(nullable = false, length = 150)
     private String name;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "department_id")
     private Department department;
 

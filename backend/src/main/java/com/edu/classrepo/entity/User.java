@@ -37,7 +37,7 @@ public class User {
     @Builder.Default
     private Role role = Role.STUDENT;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "department_id")
     private Department department;
 
