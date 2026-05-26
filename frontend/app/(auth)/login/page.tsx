@@ -66,7 +66,7 @@ export default function LoginPage() {
           <div className="relative">
             <div className="absolute inset-0 rounded-full bg-white/15 blur-2xl scale-[1.8] pointer-events-none" />
             <img
-              src="/edu-logo.jpg"
+              src="/logo.png"
               alt="EDU"
               className="relative w-24 h-24 lg:w-32 lg:h-32 rounded-full object-cover ring-4 ring-white/25 shadow-2xl"
             />

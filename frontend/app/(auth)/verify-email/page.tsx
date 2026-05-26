@@ -116,7 +116,7 @@ function VerifyEmailContent() {
           <div className="relative">
             <div className="absolute inset-0 rounded-full bg-white/15 blur-2xl scale-[1.8] pointer-events-none" />
             <img
-              src="/edu-logo.jpg"
+              src="/logo.png"
               alt="EDU"
               className="relative w-20 h-20 lg:w-28 lg:h-28 rounded-full object-cover ring-4 ring-white/25 shadow-2xl"
             />

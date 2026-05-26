@@ -99,12 +99,11 @@ function CoverSheet({
       {/* University logo */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/edu-logo.jpg"
+        src="/logo.png"
         alt="East Delta University"
         width={130}
         height={130}
         style={{ objectFit: "contain", marginBottom: "14px" }}
-        crossOrigin="anonymous"
       />
 
       {/* University header */}

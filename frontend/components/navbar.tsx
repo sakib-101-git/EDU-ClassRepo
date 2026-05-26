@@ -61,7 +61,7 @@ export default function Navbar() {
         <div className="flex items-center gap-2.5 shrink-0">
           <Link href="/dashboard" className="hover:opacity-90 transition-opacity">
             <img
-              src="/edu-logo.jpg"
+              src="/logo.png"
               alt="EDU"
               className="h-8 w-8 rounded-full object-cover ring-1 ring-white/30"
             />
