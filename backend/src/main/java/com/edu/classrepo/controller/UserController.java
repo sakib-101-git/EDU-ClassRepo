@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
 
+
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -45,12 +46,4 @@ public class UserController {
         return ResponseEntity.ok(Map.of("profilePicUrl", url));
     }
 
-    @PutMapping("/me/password")
-    public ResponseEntity<Void> changePassword(
-            @RequestBody Map<String, String> body,
-            @AuthenticationPrincipal UUID userId
-    ) {
-        // Handled in AuthService for full security context; placeholder here
-        return ResponseEntity.noContent().build();
-    }
 }
