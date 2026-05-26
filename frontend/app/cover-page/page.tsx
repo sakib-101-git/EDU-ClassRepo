@@ -336,6 +336,11 @@ export default function CoverPageCreator() {
         allowTaint: false,
         backgroundColor: "#ffffff",
         logging: false,
+        onclone: (clonedDoc) => {
+          // html2canvas 1.4.1 can't parse oklch/lab colors from Tailwind v4.
+          // CoverSheet is 100% inline styles so stripping external sheets is safe.
+          clonedDoc.querySelectorAll('style, link[rel="stylesheet"]').forEach((el) => el.remove());
+        },
       });
 
       const baseName =
