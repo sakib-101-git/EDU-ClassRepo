@@ -122,7 +122,7 @@ export const courses = {
     const q = new URLSearchParams();
     if (params?.dept)   q.set("dept", params.dept);
     if (params?.search) q.set("search", params.search);
-    if (params?.page)   q.set("page", String(params.page));
+    if (params?.page != null) q.set("page", String(params.page));
     if (params?.size)   q.set("size", String(params.size ?? 20));
     return request<Page<Course>>(`/api/courses?${q}`);
   },

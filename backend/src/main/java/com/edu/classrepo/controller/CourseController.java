@@ -39,7 +39,7 @@ public class CourseController {
     public ResponseEntity<Page<Course>> search(
             @RequestParam(required = false) String dept,
             @RequestParam(required = false) String search,
-            @PageableDefault(size = 20) Pageable pageable
+            @PageableDefault(size = 20, sort = "code") Pageable pageable
     ) {
         boolean hasDept   = dept   != null && !dept.isBlank();
         boolean hasSearch = search != null && !search.isBlank();

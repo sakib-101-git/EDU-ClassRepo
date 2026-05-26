@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { courses, ApiError, type Course } from "@/lib/api";
+import { courses, ApiError, type Course, type Page } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import AuthGuard from "@/components/auth-guard";
 import Navbar from "@/components/navbar";
@@ -41,28 +41,30 @@ export default function DashboardPage() {
   const { user } = useAuthStore();
   const isAdmin = user?.role === "ADMIN";
 
-  const [allCourses, setAllCourses] = useState<Course[]>([]);
-  const [search, setSearch]         = useState("");
-  const [query, setQuery]           = useState("");
-  const [loading, setLoading]       = useState(false);
-  const [enrolling, setEnrolling]   = useState<string | null>(null);
+  const [result, setResult]       = useState<Page<Course> | null>(null);
+  const [search, setSearch]       = useState("");
+  const [query, setQuery]         = useState("");
+  const [page, setPage]           = useState(0);
+  const [loading, setLoading]     = useState(false);
+  const [enrolling, setEnrolling] = useState<string | null>(null);
 
   const fetchCourses = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await courses.list({ search: query || undefined, page: 0, size: 500 });
-      setAllCourses([...data.content].sort((a, b) => a.code.localeCompare(b.code)));
+      const data = await courses.list({ search: query || undefined, page, size: 50 });
+      setResult(data);
     } catch {
       toast.error("Failed to load courses");
     } finally {
       setLoading(false);
     }
-  }, [query]);
+  }, [query, page]);
 
   useEffect(() => { fetchCourses(); }, [fetchCourses]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
+    setPage(0);
     setQuery(search);
   }
 
@@ -81,6 +83,8 @@ export default function DashboardPage() {
     }
   }
 
+  const courseList = result?.content ?? [];
+
   return (
     <AuthGuard>
       <div className="min-h-screen flex flex-col bg-background">
@@ -98,7 +102,7 @@ export default function DashboardPage() {
             />
             <Button type="submit" variant="secondary">Search</Button>
             {query && (
-              <Button type="button" variant="ghost" onClick={() => { setSearch(""); setQuery(""); }}>
+              <Button type="button" variant="ghost" onClick={() => { setSearch(""); setQuery(""); setPage(0); }}>
                 Clear
               </Button>
             )}
@@ -111,67 +115,93 @@ export default function DashboardPage() {
                 <div key={i} className="h-28 rounded-xl bg-muted animate-pulse" />
               ))}
             </div>
-          ) : allCourses.length === 0 ? (
+          ) : courseList.length === 0 ? (
             <div className="text-center py-16 text-muted-foreground">
               No courses found. Try a different search.
             </div>
           ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {allCourses.map((course) => {
-                const colors = getCourseColors(course.code);
-                return (
-                  <Card
-                    key={course.id}
-                    className={`hover:shadow-md transition-all cursor-pointer border ${colors.card}`}
-                    onClick={() => router.push(`/course/${course.id}`)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-baseline gap-1.5 mb-1">
-                            <span
-                              className={`font-bold text-[15px] leading-tight ${colors.title}`}
-                              style={{ fontFamily: "var(--font-montserrat)" }}
-                            >
-                              {course.code}
-                            </span>
-                            <span className="text-[13px] font-medium text-foreground/50">
-                              · {course.creditHours} cr
-                            </span>
+            <>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {courseList.map((course) => {
+                  const colors = getCourseColors(course.code);
+                  return (
+                    <Card
+                      key={course.id}
+                      className={`hover:shadow-md transition-all cursor-pointer border ${colors.card}`}
+                      onClick={() => router.push(`/course/${course.id}`)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-baseline gap-1.5 mb-1">
+                              <span
+                                className={`font-bold text-[15px] leading-tight ${colors.title}`}
+                                style={{ fontFamily: "var(--font-montserrat)" }}
+                              >
+                                {course.code}
+                              </span>
+                              <span className="text-[13px] font-medium text-foreground/50">
+                                · {course.creditHours} cr
+                              </span>
+                            </div>
+                            <p className="text-[13px] font-medium text-foreground/70 line-clamp-2 leading-snug">
+                              {course.title}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {course.department.code}
+                            </p>
                           </div>
-                          <p className="text-[13px] font-medium text-foreground/70 line-clamp-2 leading-snug">
-                            {course.title}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {course.department.code}
-                          </p>
+                          {isAdmin ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="shrink-0 mt-0.5"
+                              onClick={(e) => { e.stopPropagation(); router.push(`/course/${course.id}`); }}
+                            >
+                              View
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="shrink-0 mt-0.5 border-2 border-[#A53030] text-[#A53030] bg-white hover:bg-[#A53030] hover:text-white font-semibold transition-colors"
+                              onClick={(e) => { e.stopPropagation(); handleEnroll(course.id); }}
+                              disabled={enrolling === course.id}
+                            >
+                              {enrolling === course.id ? "…" : "Enroll"}
+                            </Button>
+                          )}
                         </div>
-                        {isAdmin ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="shrink-0 mt-0.5"
-                            onClick={(e) => { e.stopPropagation(); router.push(`/course/${course.id}`); }}
-                          >
-                            View
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="shrink-0 mt-0.5 border-2 border-[#A53030] text-[#A53030] bg-white hover:bg-[#A53030] hover:text-white font-semibold transition-colors"
-                            onClick={(e) => { e.stopPropagation(); handleEnroll(course.id); }}
-                            disabled={enrolling === course.id}
-                          >
-                            {enrolling === course.id ? "…" : "Enroll"}
-                          </Button>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              {result && result.totalPages > 1 && (
+                <div className="flex justify-center items-center gap-3 mt-8">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page === 0}
+                    onClick={() => setPage((p) => p - 1)}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    Page {page + 1} of {result.totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page >= result.totalPages - 1}
+                    onClick={() => setPage((p) => p + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </main>
       </div>
