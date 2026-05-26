@@ -114,12 +114,6 @@
             <artifactId>jackson-datatype-hibernate6</artifactId>
         </dependency>
 
-        <!-- Email — OTP verification via SMTP -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-mail</artifactId>
-        </dependency>
-
         <!-- Flyway — DB migrations -->
         <dependency>
             <groupId>org.flywaydb</groupId>

@@ -1,35 +1,61 @@
 package com.edu.classrepo.service;
 
-import jakarta.mail.internet.MimeMessage;
-import lombok.RequiredArgsConstructor;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.List;
+import java.util.Map;
+
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class EmailService {
 
-    private final JavaMailSender mailSender;
+    private final ObjectMapper mapper;
 
-    @Value("${spring.mail.username}")
-    private String fromAddress;
+    @Value("${app.brevo.api-key}")
+    private String apiKey;
+
+    @Value("${app.email.from-address}")
+    private String fromEmail;
+
+    private static final HttpClient HTTP = HttpClient.newHttpClient();
+
+    public EmailService(ObjectMapper mapper) {
+        this.mapper = mapper;
+    }
 
     @Async
     public void sendOtp(String toEmail, String otp) {
         try {
-            MimeMessage mime = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(mime, "UTF-8");
-            helper.setFrom("EDU ClassRepo <" + fromAddress + ">");
-            helper.setTo(toEmail);
-            helper.setSubject("Your EDU ClassRepo verification code: " + otp);
-            helper.setText(buildOtpHtml(otp), true);
-            mailSender.send(mime);
-            log.info("OTP sent to {}", toEmail);
+            String body = mapper.writeValueAsString(Map.of(
+                "sender",      Map.of("name", "EDU ClassRepo", "email", fromEmail),
+                "to",          List.of(Map.of("email", toEmail)),
+                "subject",     "Your EDU ClassRepo verification code: " + otp,
+                "htmlContent", buildOtpHtml(otp)
+            ));
+
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://api.brevo.com/v3/smtp/email"))
+                .header("api-key", apiKey)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body))
+                .build();
+
+            HttpResponse<String> response = HTTP.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                log.info("OTP sent to {}", toEmail);
+            } else {
+                log.error("Brevo API error {}: {}", response.statusCode(), response.body());
+                throw new RuntimeException("Could not send verification email. Please try again.");
+            }
         } catch (Exception e) {
             log.error("Failed to send OTP to {}: {}", toEmail, e.getMessage());
             throw new RuntimeException("Could not send verification email. Please try again.");

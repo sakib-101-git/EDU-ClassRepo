@@ -32,18 +32,6 @@ spring:
       max-file-size: 50MB
       max-request-size: 55MB
 
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-
 server:
   port: ${PORT:8080}
   error:
@@ -70,6 +58,10 @@ app:
     api-key: ${GEMINI_API_KEY:}
     api-url: https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent
 
+  brevo:
+    api-key: ${BREVO_API_KEY}
+
   email:
     allowed-domain: eastdelta.edu.bd
+    from-address: ${MAIL_USERNAME}
 
