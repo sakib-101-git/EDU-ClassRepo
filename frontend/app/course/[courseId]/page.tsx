@@ -61,9 +61,10 @@ export default function CoursePage({ params }: { params: Promise<{ courseId: str
   }, [courseId]);
 
   const fetchMaterials = useCallback(async () => {
+    if (!course?.id) return;
     setLoading(true);
     try {
-      const data = await materials.byCourse(courseId, {
+      const data = await materials.byCourse(course.id, {
         facultyId: selectedFaculty !== FACULTY_ALL ? selectedFaculty : undefined,
         page,
       });
@@ -73,7 +74,7 @@ export default function CoursePage({ params }: { params: Promise<{ courseId: str
     } finally {
       setLoading(false);
     }
-  }, [courseId, selectedFaculty, page]);
+  }, [course?.id, selectedFaculty, page]);
 
   useEffect(() => { fetchMaterials(); }, [fetchMaterials]);
 
@@ -83,7 +84,7 @@ export default function CoursePage({ params }: { params: Promise<{ courseId: str
     if (!file) return;
     if (!uploadFacultyId) { toast.error("Please select a faculty member"); return; }
     try {
-      const res = await materials.upload(file, courseId, uploadFacultyId);
+      const res = await materials.upload(file, course!.id, uploadFacultyId);
       toast.success(res.message);
       setUploadOpen(false);
       setUploadFacultyId("");
