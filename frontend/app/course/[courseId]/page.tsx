@@ -95,6 +95,7 @@ export default function CoursePage({ params }: { params: Promise<{ courseId: str
     if (!file) return;
 
     if (addNewFaculty) {
+      if (!newFacultyName.trim()) { toast.error("Faculty full name is required"); return; }
       if (!newFacultyShortForm.trim()) { toast.error("Abbreviation is required"); return; }
     } else {
       if (!uploadFacultyId) { toast.error("Please select a faculty member"); return; }
@@ -179,7 +180,7 @@ export default function CoursePage({ params }: { params: Promise<{ courseId: str
                     {addNewFaculty ? (
                       <div className="space-y-2">
                         <Input
-                          placeholder="Full name (e.g. Mr. John Doe)"
+                          placeholder="Full name (e.g. Mr. John Doe) *"
                           value={newFacultyName}
                           onChange={(e) => setNewFacultyName(e.target.value)}
                         />

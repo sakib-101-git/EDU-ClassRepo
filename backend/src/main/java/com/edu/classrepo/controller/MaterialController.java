@@ -97,8 +97,9 @@ public class MaterialController {
             faculty = facultyRepository.findById(facultyId).orElse(null);
         } else if (facultyShortForm != null && !facultyShortForm.isBlank()) {
             String shortForm = facultyShortForm.trim().toUpperCase();
-            String fullName  = (facultyName != null && !facultyName.isBlank())
-                    ? facultyName.trim() : shortForm;
+            if (facultyName == null || facultyName.isBlank())
+                throw new BadRequestException("Faculty full name is required when adding a new faculty member");
+            String fullName = facultyName.trim();
             faculty = facultyRepository.findByShortFormIgnoreCase(shortForm)
                     .orElseGet(() -> facultyRepository.save(
                             com.edu.classrepo.entity.Faculty.builder()
