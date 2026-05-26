@@ -1,163 +1,109 @@
-# EDU ClassRepo - Note Sharing Platform
+# EDU ClassRepo
 
-A web application for East Delta University students to share and download course notes and study materials.
+Academic resource hub for East Delta University. Students can browse courses, upload study materials, and generate assignment cover pages. Admins moderate uploaded files before they go live.
+
+**Live:** [edu-class-repo-pi.vercel.app](https://edu-class-repo-pi.vercel.app)
+
+---
+
+## Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | Next.js 16, React 19, Tailwind CSS v4, shadcn/ui |
+| Backend | Spring Boot 3.4, Java 21 |
+| Database | PostgreSQL (Supabase) with Flyway migrations |
+| Auth | JWT (access + refresh token rotation) + OTP email verification |
+| Storage | Cloudflare R2 (S3-compatible) |
+| Deploy | Vercel (frontend) · Render (backend) |
+
+---
 
 ## Features
 
-- **User Authentication**: Student and Admin login system
-- **Course Management**: Browse, enroll, and manage courses
-- **File Sharing**: Upload and download PDF files for courses
-- **Admin Panel**: Approve/reject uploaded files
-- **Responsive Design**: Works on desktop, tablet, and mobile devices
+- **Course repository** — browse and search all EDU courses by department
+- **Material uploads** — students upload PDFs/docs, admin approves before publishing
+- **Enrollment** — enroll in courses to track your subjects
+- **Cover page generator** — auto-fills assignment cover pages from your profile
+- **Admin panel** — approve/reject/rename pending materials, manage courses
+- **OTP email verification** — required on registration, restricted to `@eastdelta.edu.bd`
 
-## Technology Stack
-
-### Frontend
-- HTML5
-- CSS3
-- JavaScript (Vanilla)
-- Font Awesome Icons
-
-### Backend
-- Node.js
-- Express.js
-- PostgreSQL Database
-- JWT Authentication
-- Multer (File Upload)
+---
 
 ## Project Structure
 
 ```
 EDU-ClassRepo/
-├── public/              # Frontend files
-│   ├── css/            # Stylesheets
-│   ├── js/             # JavaScript files
-│   └── *.html          # HTML pages
-├── src/                # Backend source code
-│   ├── config/         # Configuration files
-│   ├── controllers/    # Route controllers
-│   ├── middleware/     # Express middleware
-│   ├── routes/         # API routes
-│   └── utils/          # Utility functions
-├── uploads/            # Uploaded files directory
-├── server.js           # Main server file
-└── package.json        # Dependencies
+├── frontend/               # Next.js app
+│   ├── app/                # Pages (App Router)
+│   ├── components/         # Shared UI components
+│   └── lib/                # API client, auth store
+└── backend/                # Spring Boot API
+    └── src/main/java/com/edu/classrepo/
+        ├── config/         # Security, storage, scheduling
+        ├── controller/     # REST endpoints
+        ├── service/        # Business logic
+        ├── entity/         # JPA entities
+        ├── repository/     # Spring Data repositories
+        ├── security/       # JWT filter + token provider
+        └── dto/            # Request/response DTOs
 ```
 
-## Setup Instructions
+---
 
-### 1. Install Dependencies
+## Local Development
+
+### Backend
+
+Requires Java 21 and a PostgreSQL database.
 
 ```bash
+cd backend
+cp .env.example .env   # fill in your values
+./mvnw spring-boot:run
+```
+
+Key environment variables:
+
+```
+DATABASE_URL=jdbc:postgresql://localhost:5432/classrepo
+DATABASE_USERNAME=postgres
+DATABASE_PASSWORD=yourpassword
+JWT_SECRET=your64charSecret
+MAIL_USERNAME=you@gmail.com
+MAIL_PASSWORD=yourAppPassword
+R2_ENDPOINT=https://your-account.r2.cloudflarestorage.com
+R2_ACCESS_KEY=...
+R2_SECRET_KEY=...
+R2_BUCKET=your-bucket
+R2_PUBLIC_URL=https://pub-xxx.r2.dev
+GEMINI_API_KEY=...
+CORS_ALLOWED_ORIGINS=http://localhost:3000
+ADMIN_DEFAULT_PASSWORD=yourAdminPassword
+ADMIN_EMAIL_1=admin@eastdelta.edu.bd
+ADMIN_NAME_1=Admin
+```
+
+### Frontend
+
+```bash
+cd frontend
+cp .env.local.example .env.local   # set NEXT_PUBLIC_API_URL
 npm install
+npm run dev
 ```
 
-### 2. Database Setup
+---
 
-1. Create PostgreSQL database:
-```sql
-CREATE DATABASE edu_classrepo;
-```
+## Deployment
 
-2. Run database schema:
-```bash
-psql -U postgres -d edu_classrepo -f database.sql
-```
+Backend is Docker-based with a `render.yaml` for one-click Render deploy.
+Frontend deploys to Vercel — set root directory to `frontend`.
 
-3. Create admin users (optional):
-```bash
-node create_admins.js
-```
+See [render.yaml](backend/render.yaml) for the full environment variable list.
 
-### 3. Environment Variables
+---
 
-Create a `.env` file in the root directory:
+## Author
 
-```env
-PORT=3000
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=edu_classrepo
-DB_USER=postgres
-DB_PASSWORD=your_password
-JWT_SECRET=your_secret_key_here
-```
-
-### 4. Run the Server
-
-```bash
-npm start
-```
-
-### 5. Access the Application
-
-Open browser and navigate to: `http://localhost:3000`
-
-## Default Admin Account
-
-- Email: `nazmussakai@gmail.com`
-- Password: Set via `create_admins.js` script (default: `admin123`)
-
-## CRUD Operations
-
-### Courses
-- **Create**: Admin can create new courses
-- **Read**: All users can view available courses
-- **Update**: Admin can update course details
-- **Delete**: Admin can delete courses
-
-### Files
-- **Create**: Students can upload files (pending approval)
-- **Read**: Users can view and download approved files
-- **Update**: Admin can rename files
-- **Delete**: Admin can delete/reject files
-
-### Enrollments
-- **Create**: Students can enroll in courses
-- **Read**: Students can view their enrolled courses
-- **Delete**: Students can unenroll from courses
-
-## API Endpoints
-
-### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login user
-
-### Courses
-- `GET /api/courses` - Get all courses
-- `GET /api/courses/:id` - Get course by ID
-- `POST /api/courses` - Create course (Admin)
-- `PUT /api/courses/:id` - Update course (Admin)
-- `DELETE /api/courses/:id` - Delete course (Admin)
-
-### Enrollments
-- `GET /api/enrollments` - Get user's enrollments
-- `POST /api/enrollments` - Enroll in course
-- `DELETE /api/enrollments/:courseId` - Unenroll from course
-
-### Files
-- `GET /api/files/:courseId` - Get course files
-- `GET /api/files/pending/all` - Get pending files (Admin)
-- `POST /api/files` - Upload file
-- `PUT /api/files/:id/approve` - Approve file (Admin)
-- `PUT /api/files/:id/rename` - Rename file (Admin)
-- `DELETE /api/files/:id` - Delete file
-- `DELETE /api/files/:id/reject` - Reject file (Admin)
-
-## Database Schema
-
-### Users Table
-- id, student_id, name, email, password, department, gender, semester, role, created_at
-
-### Courses Table
-- id, code, title, department, instructor, created_at
-
-### Enrollments Table
-- id, user_id, course_id, enrolled_at
-
-### Files Table
-- id, course_id, file_name, file_path, file_size, uploaded_by, status, created_at
-
-## License
-
-ISC License
+**Syed Nazmus Sakib** — [github.com/sakib-101-git](https://github.com/sakib-101-git)

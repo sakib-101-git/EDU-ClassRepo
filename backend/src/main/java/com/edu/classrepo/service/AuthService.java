@@ -180,9 +180,6 @@ public class AuthService {
         refreshTokenRepository.findByToken(refreshTokenValue)
                 .ifPresent(refreshTokenRepository::delete);
     }
-
-    // ── Helpers ────────────────────────────────────────────────────────────────
-
     private void sendFreshOtp(String email) {
         otpTokenRepository.deleteAllByEmail(email);
         String code = String.format("%06d", RANDOM.nextInt(1_000_000));

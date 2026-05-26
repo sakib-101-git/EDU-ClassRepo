@@ -43,9 +43,6 @@ public class DataSeeder implements ApplicationRunner {
         seedAdminAccounts();
         log.info("DataSeeder complete.");
     }
-
-    // ── Remove BBA and ECO from DB ────────────────────────────────────────────
-
     private void removeObsoleteDepartments() {
         for (String code : List.of("BBA", "ECO")) {
             Integer count = jdbc.queryForObject(
@@ -58,9 +55,6 @@ public class DataSeeder implements ApplicationRunner {
             }
         }
     }
-
-    // ── Fix incorrect data left by earlier seeder versions ────────────────────
-
     private void fixLegacyData() {
         // ANB was incorrectly named "Arfan Ahmed (ANB)"; correct is Ms. Anika Bushra
         jdbc.update("UPDATE faculty SET name='Ms. Anika Bushra' WHERE short_form='ANB' AND name LIKE '%Arfan%'");
@@ -69,9 +63,6 @@ public class DataSeeder implements ApplicationRunner {
         // AAA teaches EEE courses — move to EEE dept
         jdbc.update("UPDATE faculty SET department_id=(SELECT id FROM departments WHERE code='EEE') WHERE short_form='AAA'");
     }
-
-    // ── Departments ───────────────────────────────────────────────────────────
-
     private void seedDepartments() {
         List<String[]> depts = List.of(
             new String[]{"CSE", "Computer Science & Engineering"},
@@ -86,14 +77,10 @@ public class DataSeeder implements ApplicationRunner {
                 departmentRepository.save(Department.builder().code(d[0]).name(d[1]).build()));
         }
     }
-
-    // ── Faculty (UPSERT — fixes names on every restart) ──────────────────────
-
     private void upsertFaculty() {
         // Official Summer 2026 faculty table (55 members) + additional staff in routine
         // Format: shortForm, fullName, deptCode
         List<String[]> faculty = List.of(
-            // ── CSE ──────────────────────────────────────────────────────────
             new String[]{"Dr. IAZ", "Dr. Ishtiaque Aziz Zahed",          "CSE"},
             new String[]{"GMD",     "Mr. Golam Moktader Daiyan",         "CSE"},
             new String[]{"SAF",     "Ms. Saraf Anika",                   "CSE"},
@@ -131,8 +118,6 @@ public class DataSeeder implements ApplicationRunner {
             new String[]{"TRINA",  "Ms. Trina Chakroborty",              "CSE"},
             new String[]{"MUSFEQA","Ms. Musfequa Shams",                 "CSE"},
             new String[]{"ARFAN",  "Mr. Arfan Ahmed",                    "CSE"},
-
-            // ── EEE ──────────────────────────────────────────────────────────
             new String[]{"Dr. MK",  "Dr. K.M. Mohibul Kabir",           "EEE"},
             new String[]{"TA",      "Mr. Mohammad Toufiq Ahmed",         "EEE"},
             new String[]{"Dr. MSA", "Dr. Md. Shahidul Alam",             "EEE"},
@@ -143,8 +128,6 @@ public class DataSeeder implements ApplicationRunner {
             new String[]{"JUNAYET","Mr. A.S.M. Junayet Hossain",         "EEE"},
             new String[]{"SHAMIM", "Mr. Mostaquimul Abrar Shamim",       "EEE"},
             new String[]{"AAA",    "Mr. Ahamed-Al-Arifin",               "EEE"},
-
-            // ── GED (Math, Physics, English, Humanities) ─────────────────────
             new String[]{"SHA",    "Ms. Sharmin Akter",                  "GED"},
             new String[]{"MC",     "Mr. Mashky Chowdhury Surja",         "GED"},
             new String[]{"PRM",    "Ms. Parna Mutsuddy",                 "GED"},
@@ -166,23 +149,20 @@ public class DataSeeder implements ApplicationRunner {
                 f[0], f[1], f[2]);
         }
     }
-
-    // ── Courses (UPSERT — keeps titles and credits accurate) ─────────────────
-
     private void upsertCourses() {
         // Format: code, title, deptCode, creditHours
         List<Object[]> courses = List.of(
 
-            // ════ GED — Access Academy ════════════════════════════════════════
+            // GED — Access Academy
             new Object[]{"AA 099",   "Academic Reading & Writing",                          "GED", 3.0},
             new Object[]{"AA 150",   "Fundamentals of Quantitative Reasoning",              "GED", 3.0},
             new Object[]{"AA 200",   "Student Development Seminar",                         "GED", 3.0},
 
-            // ════ GED — Language Skills ═══════════════════════════════════════
+            // GED — Language Skills
             new Object[]{"ENG 111",  "Advanced Academic Reading & Writing",                 "GED", 3.0},
             new Object[]{"ENG 112",  "Advanced Academic Listening & Speaking",              "GED", 1.5},
 
-            // ════ GED — University Programme (UP) ════════════════════════════
+            // GED — University Programme (UP)
             new Object[]{"BNG 101",  "Bangla Language and Literature",                      "GED", 3.0},
             new Object[]{"HIS 101",  "History of the Emergence of Bangladesh",              "GED", 3.0},
             new Object[]{"PSC 100",  "Introduction to Political Science",                   "GED", 3.0},
@@ -213,12 +193,12 @@ public class DataSeeder implements ApplicationRunner {
             new Object[]{"HUM 305",  "Professional Ethics & Environmental Protection",      "GED", 3.0},
             new Object[]{"IPD 400",  "Integrated Professional Development",                 "GED", 3.0},
 
-            // ════ GED — Basic Science ═════════════════════════════════════════
+            // GED — Basic Science
             new Object[]{"PHY 101",  "Physics",                                             "GED", 3.0},
             new Object[]{"PHY 102",  "Physics Laboratory",                                  "GED", 1.5},
             new Object[]{"CHEM 201", "Chemistry",                                           "GED", 3.0},
 
-            // ════ GED — Mathematics ═══════════════════════════════════════════
+            // GED — Mathematics
             new Object[]{"MATH 101", "Introduction to Mathematics",                         "GED", 3.0},
             new Object[]{"MATH 103", "Engineering Mathematics",                             "GED", 3.0},
             new Object[]{"MATH 107", "Differential Calculus, Coordinate Geometry & Complex Variables", "GED", 3.0},
@@ -227,11 +207,11 @@ public class DataSeeder implements ApplicationRunner {
             new Object[]{"MATH 207", "Integral Calculus, Vector Analysis & Linear Algebra", "GED", 3.0},
             new Object[]{"MATH 301", "Probability & Statistics",                            "GED", 3.0},
 
-            // ════ ME ══════════════════════════════════════════════════════════
+            // ME
             new Object[]{"ME 101",   "Introduction to Mechanical Engineering",              "ME",  3.0},
             new Object[]{"ME 102",   "Engineering Drawing",                                 "ME",  1.5},
 
-            // ════ EEE — Interdisciplinary (for CSE students) ══════════════════
+            // EEE — Interdisciplinary (for CSE students)
             new Object[]{"EEE 111",  "Introduction to Electrical Engineering",              "EEE", 3.0},
             new Object[]{"EEE 112",  "Introduction to Electrical Engineering Laboratory",   "EEE", 1.5},
             new Object[]{"EEE 213",  "Electronics Devices & Circuits",                     "EEE", 3.0},
@@ -239,7 +219,7 @@ public class DataSeeder implements ApplicationRunner {
             new Object[]{"EEE 317",  "Electrical Drives & Instrumentation",                "EEE", 3.0},
             new Object[]{"EEE 318",  "Electrical Drives & Instrumentation Laboratory",     "EEE", 1.5},
 
-            // ════ EEE — Major Courses ══════════════════════════════════════════
+            // EEE — Major Courses
             new Object[]{"EEE 101",  "Electrical Circuits I",                              "EEE", 3.0},
             new Object[]{"EEE 103",  "Electrical Circuits II",                             "EEE", 3.0},
             new Object[]{"EEE 203",  "Electrical Machines I",                              "EEE", 3.0},
@@ -272,20 +252,20 @@ public class DataSeeder implements ApplicationRunner {
             new Object[]{"EEE 453",  "Advanced Communication",                             "EEE", 3.0},
             new Object[]{"EEE 471",  "Telecommunication Systems",                          "EEE", 3.0},
 
-            // ════ ETE — Options for CSE ═══════════════════════════════════════
+            // ETE — Options for CSE
             new Object[]{"ETE 309",  "Digital Signal Processing",                          "ETE", 3.0},
             new Object[]{"ETE 310",  "Digital Signal Processing Laboratory",               "ETE", 1.5},
             new Object[]{"ETE 431",  "Mobile Cellular & Wireless Communication",           "ETE", 3.0},
             new Object[]{"ETE 435",  "Digital Communication",                              "ETE", 3.0},
             new Object[]{"ETE 436",  "Digital Communication Laboratory",                   "ETE", 1.5},
 
-            // ════ CSE — Interdisciplinary ═════════════════════════════════════
+            // CSE — Interdisciplinary
             new Object[]{"CSE 103",  "Introduction to Computer Science",                   "CSE", 3.0},
             new Object[]{"CSE 104",  "Introduction to Computer Science Laboratory",        "CSE", 1.5},
             new Object[]{"CSE 223",  "Digital Electronics & Pulse Technique",              "CSE", 3.0},
             new Object[]{"CSE 224",  "Digital Electronics & Pulse Technique Laboratory",   "CSE", 1.5},
 
-            // ════ CSE — Program Core ══════════════════════════════════════════
+            // CSE — Program Core
             new Object[]{"CSE 111",  "Computer Fundamentals and Programming Basics",       "CSE", 3.0},
             new Object[]{"CSE 112",  "Computer Fundamentals and Programming Basics Laboratory", "CSE", 1.5},
             new Object[]{"CSE 113",  "Structured Programming Language",                    "CSE", 3.0},
@@ -324,7 +304,7 @@ public class DataSeeder implements ApplicationRunner {
             new Object[]{"CSE 466",  "Mobile App Development",                             "CSE", 1.5},
             new Object[]{"CSE 400",  "Project / Thesis",                                   "CSE", 6.0},
 
-            // ════ CSE — Options ═══════════════════════════════════════════════
+            // CSE — Options
             new Object[]{"CSE 301",  "Data Warehousing and Mining",                        "CSE", 3.0},
             new Object[]{"CSE 303",  "Introduction to Bioinformatics",                     "CSE", 3.0},
             new Object[]{"CSE 307",  "Mobile Computing and Applications",                  "CSE", 3.0},
@@ -351,9 +331,6 @@ public class DataSeeder implements ApplicationRunner {
                 c[0], c[1], c[2], c[3]);
         }
     }
-
-    // ── Admin accounts ────────────────────────────────────────────────────────
-
     private void seedAdminAccounts() {
         String password = prop("ADMIN_DEFAULT_PASSWORD", "ChangeMe@2025!");
         String email    = prop("ADMIN_EMAIL_1",          "admin1@eastdelta.edu.bd");

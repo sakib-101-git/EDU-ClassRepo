@@ -6,13 +6,16 @@ node_modules/
 .env.local
 .env.*.local
 
+# Build output
+.next/
+out/
+
 # Logs
 logs/
 *.log
 npm-debug.log*
-yarn-debug.log*
 
-# OS files
+# OS
 .DS_Store
 Thumbs.db
 
@@ -22,12 +25,9 @@ Thumbs.db
 *.swp
 *.swo
 
-# Uploads (tracked by .gitkeep)
-uploads/*
-!uploads/.gitkeep
+# Claude Code
+.claude/
+.github/java-upgrade/
 
-.vscode/
-.idea/
-
-# Lock files (optional)
-package-lock.json
+# Personal reference docs
+docs/

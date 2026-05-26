@@ -2,10 +2,10 @@
 -- Flyway V1: creates all tables, indexes, and constraints from scratch.
 -- Keep DDL in sync with entity classes; Hibernate ddl-auto=validate will catch drift.
 
--- ── Enable UUID extension (Supabase has this by default) ─────────────────────
+-- Enable UUID extension (Supabase has this by default)
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- ── departments ───────────────────────────────────────────────────────────────
+-- departments
 CREATE TABLE IF NOT EXISTS departments (
     id   UUID         NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     code VARCHAR(20)  NOT NULL,
@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS departments (
     CONSTRAINT uq_departments_code UNIQUE (code)
 );
 
--- ── faculty ───────────────────────────────────────────────────────────────────
+-- faculty
 CREATE TABLE IF NOT EXISTS faculty (
     id            UUID         NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     short_form    VARCHAR(30)  NOT NULL,
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS faculty (
 CREATE INDEX IF NOT EXISTS idx_faculty_short_form    ON faculty (short_form);
 CREATE INDEX IF NOT EXISTS idx_faculty_department_id ON faculty (department_id);
 
--- ── courses ───────────────────────────────────────────────────────────────────
+-- courses
 CREATE TABLE IF NOT EXISTS courses (
     id            UUID         NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     code          VARCHAR(30)  NOT NULL,
@@ -39,14 +39,14 @@ CREATE TABLE IF NOT EXISTS courses (
 CREATE INDEX IF NOT EXISTS idx_courses_code          ON courses (code);
 CREATE INDEX IF NOT EXISTS idx_courses_department_id ON courses (department_id);
 
--- ── course_faculty (join table) ───────────────────────────────────────────────
+-- course_faculty (join table)
 CREATE TABLE IF NOT EXISTS course_faculty (
     course_id  UUID NOT NULL REFERENCES courses(id)  ON DELETE CASCADE,
     faculty_id UUID NOT NULL REFERENCES faculty(id)  ON DELETE CASCADE,
     PRIMARY KEY (course_id, faculty_id)
 );
 
--- ── users ─────────────────────────────────────────────────────────────────────
+-- users
 CREATE TABLE IF NOT EXISTS users (
     id              UUID         NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     student_id      VARCHAR(50),
@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
 
--- ── refresh_tokens ────────────────────────────────────────────────────────────
+-- refresh_tokens
 CREATE TABLE IF NOT EXISTS refresh_tokens (
     id         UUID         NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id    UUID         NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens (user_id);
 
--- ── enrollments ───────────────────────────────────────────────────────────────
+-- enrollments
 CREATE TABLE IF NOT EXISTS enrollments (
     id          UUID        NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id     UUID        NOT NULL REFERENCES users(id)    ON DELETE CASCADE,
@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS enrollments (
 CREATE INDEX IF NOT EXISTS idx_enrollments_user_id   ON enrollments (user_id);
 CREATE INDEX IF NOT EXISTS idx_enrollments_course_id ON enrollments (course_id);
 
--- ── materials ─────────────────────────────────────────────────────────────────
+-- materials
 CREATE TABLE IF NOT EXISTS materials (
     id           UUID         NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     course_id    UUID         NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS materials (
 CREATE INDEX IF NOT EXISTS idx_materials_course_id  ON materials (course_id);
 CREATE INDEX IF NOT EXISTS idx_materials_status     ON materials (status);
 
--- ── semesters ─────────────────────────────────────────────────────────────────
+-- semesters
 CREATE TABLE IF NOT EXISTS semesters (
     id         UUID        NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     code       VARCHAR(30) NOT NULL,
@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS semesters (
     CONSTRAINT uq_semesters_code UNIQUE (code)
 );
 
--- ── routine_slots ─────────────────────────────────────────────────────────────
+-- routine_slots
 CREATE TABLE IF NOT EXISTS routine_slots (
     id          UUID        NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     semester_id UUID        NOT NULL REFERENCES semesters(id) ON DELETE CASCADE,
@@ -140,7 +140,7 @@ CREATE INDEX IF NOT EXISTS idx_slot_semester  ON routine_slots (semester_id);
 CREATE INDEX IF NOT EXISTS idx_slot_course    ON routine_slots (course_id);
 CREATE INDEX IF NOT EXISTS idx_slot_faculty   ON routine_slots (faculty_id);
 
--- ── custom_routines ───────────────────────────────────────────────────────────
+-- custom_routines
 CREATE TABLE IF NOT EXISTS custom_routines (
     id          UUID         NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     student_id  UUID         NOT NULL REFERENCES users(id)     ON DELETE CASCADE,
@@ -151,14 +151,14 @@ CREATE TABLE IF NOT EXISTS custom_routines (
 
 CREATE INDEX IF NOT EXISTS idx_custom_routine_student ON custom_routines (student_id);
 
--- ── custom_routine_slots (join table) ─────────────────────────────────────────
+-- custom_routine_slots (join table)
 CREATE TABLE IF NOT EXISTS custom_routine_slots (
     routine_id UUID NOT NULL REFERENCES custom_routines(id) ON DELETE CASCADE,
     slot_id    UUID NOT NULL REFERENCES routine_slots(id)   ON DELETE CASCADE,
     PRIMARY KEY (routine_id, slot_id)
 );
 
--- ── cover_page_templates ──────────────────────────────────────────────────────
+-- cover_page_templates
 CREATE TABLE IF NOT EXISTS cover_page_templates (
     id            UUID        NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     type          VARCHAR(20) NOT NULL,
