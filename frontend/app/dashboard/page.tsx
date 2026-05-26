@@ -128,7 +128,7 @@ export default function DashboardPage() {
                     <Card
                       key={course.id}
                       className={`hover:shadow-md transition-all cursor-pointer border ${colors.card}`}
-                      onClick={() => router.push(`/course/${course.id}`)}
+                      onClick={() => router.push(`/course/${course.code.replace(/ /g, '-')}`)}
                     >
                       <CardContent className="p-4">
                         <div className="flex items-start gap-3">
@@ -156,7 +156,7 @@ export default function DashboardPage() {
                               size="sm"
                               variant="outline"
                               className="shrink-0 mt-0.5"
-                              onClick={(e) => { e.stopPropagation(); router.push(`/course/${course.id}`); }}
+                              onClick={(e) => { e.stopPropagation(); router.push(`/course/${course.code.replace(/ /g, '-')}`); }}
                             >
                               View
                             </Button>

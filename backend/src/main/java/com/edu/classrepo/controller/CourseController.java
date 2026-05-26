@@ -57,12 +57,19 @@ public class CourseController {
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Course> getById(@PathVariable UUID id) {
-        return ResponseEntity.ok(
-            courseRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Course", id))
-        );
+    @GetMapping("/{identifier}")
+    public ResponseEntity<Course> getById(@PathVariable String identifier) {
+        Course course;
+        try {
+            UUID id = UUID.fromString(identifier);
+            course = courseRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Course", identifier));
+        } catch (IllegalArgumentException e) {
+            String code = identifier.replace('-', ' ').toUpperCase();
+            course = courseRepository.findByCode(code)
+                    .orElseThrow(() -> new ResourceNotFoundException("Course", identifier));
+        }
+        return ResponseEntity.ok(course);
     }
 
     @PostMapping
