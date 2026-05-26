@@ -44,6 +44,7 @@ const DESIGNATIONS = [
 function CoverSheet({
   ref: coverRef,
   template,
+  logoSrc,
   labTitle,
   experimentNo,
   assignmentTitle,
@@ -61,6 +62,7 @@ function CoverSheet({
 }: {
   ref: React.Ref<HTMLDivElement>;
   template: Template;
+  logoSrc: string;
   labTitle: string;
   experimentNo: string;
   assignmentTitle: string;
@@ -99,7 +101,7 @@ function CoverSheet({
       {/* University logo */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/edu-logo.jpg"
+        src={logoSrc}
         alt="East Delta University"
         width={130}
         height={130}
@@ -281,6 +283,20 @@ export default function CoverPageCreator() {
 
   const coverRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState<"pdf" | "image" | null>(null);
+  const [logoDataUrl, setLogoDataUrl] = useState("/edu-logo.jpg");
+
+  // Preload logo as data URL so html2canvas never fetches it (avoids canvas taint)
+  useEffect(() => {
+    fetch("/edu-logo.jpg")
+      .then((r) => r.blob())
+      .then((blob) => new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      }))
+      .then(setLogoDataUrl)
+      .catch(() => {});
+  }, []);
 
   // Template
   const [template, setTemplate] = useState<Template>("lab-report");
@@ -316,7 +332,8 @@ export default function CoverPageCreator() {
       const html2canvas = (await import("html2canvas")).default;
       const canvas = await html2canvas(coverRef.current, {
         scale: 2,
-        useCORS: true,
+        useCORS: false,
+        allowTaint: false,
         backgroundColor: "#ffffff",
         logging: false,
       });
@@ -342,8 +359,9 @@ export default function CoverPageCreator() {
         pdf.save(`${baseName}.pdf`);
         toast.success("PDF downloaded");
       }
-    } catch {
-      toast.error("Download failed — try again");
+    } catch (err) {
+      console.error("Cover page download error:", err);
+      toast.error(err instanceof Error ? err.message : "Download failed — try again");
     } finally {
       setDownloading(null);
     }
@@ -351,6 +369,7 @@ export default function CoverPageCreator() {
 
   const sharedProps = {
     template,
+    logoSrc: logoDataUrl,
     labTitle,
     experimentNo,
     assignmentTitle,
