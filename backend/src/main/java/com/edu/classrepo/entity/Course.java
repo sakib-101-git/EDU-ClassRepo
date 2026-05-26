@@ -1,5 +1,6 @@
 package com.edu.classrepo.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,7 +26,7 @@ public class Course {
     @Column(nullable = false, length = 250)
     private String title;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "department_id", nullable = false)
     private Department department;
 
@@ -33,6 +34,7 @@ public class Course {
     @Builder.Default
     private Double creditHours = 3.0;
 
+    @JsonIgnore
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "course_faculty",
