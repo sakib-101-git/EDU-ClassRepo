@@ -1,34 +1,30 @@
-# ── Stage 1: Build ────────────────────────────────────────────────────────────
-FROM eclipse-temurin:21-jdk-alpine AS build
+# Production image for the Django backend (Render deploys this).
+FROM python:3.12-slim
 
-WORKDIR /workspace
-
-# Install Maven
-RUN apk add --no-cache curl && \
-    curl -fsSL https://archive.apache.org/dist/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz \
-    | tar -xz -C /opt/ && \
-    ln -s /opt/apache-maven-3.9.9/bin/mvn /usr/local/bin/mvn
-
-COPY pom.xml .
-# Pre-fetch dependencies (cached layer)
-RUN mvn dependency:go-offline -B --no-transfer-progress -q
-
-COPY src ./src
-RUN mvn package -DskipTests -B --no-transfer-progress -q
-
-# ── Stage 2: Runtime ──────────────────────────────────────────────────────────
-FROM eclipse-temurin:21-jre-alpine
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-USER appuser
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-COPY --from=build /workspace/target/*.jar app.jar
+COPY . .
 
-EXPOSE 8080
+# Collect static files for the Django admin (served by WhiteNoise).
+# DATABASE_URL is required by settings.py but unavailable at build time;
+# collectstatic never opens a connection, so a throwaway DSN is enough to
+# satisfy the import-time check. The real one is injected at runtime.
+RUN SECRET_KEY=build-time-only \
+    DATABASE_URL=postgresql://build:build@localhost:5432/build \
+    python manage.py collectstatic --noinput
 
-ENTRYPOINT ["java", \
-  "-XX:+UseContainerSupport", \
-  "-XX:MaxRAMPercentage=75.0", \
-  "-jar", "app.jar"]
+RUN addgroup --system app && adduser --system --ingroup app app
+USER app
+
+EXPOSE 8000
+
+# migrate + ensure the admin accounts on every boot (both idempotent), then serve.
+# seed_data creates ONLY the admins — departments/faculty/courses are entered at
+# /admin/. It exits non-zero when no admin is configured, which aborts the boot.
+CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py seed_data && gunicorn config.wsgi --bind 0.0.0.0:${PORT:-8000} --workers 2 --timeout 120"]

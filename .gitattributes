@@ -1,0 +1,38 @@
+# Line-ending normalisation.
+#
+# This repo is edited on Windows (under OneDrive) but builds and runs on Linux.
+# Without this file, editing a file rewrites every line as CRLF and git reports
+# the whole file as changed: 38 frontend files once showed +4352/-4355 when only
+# 12 of them had any real edit. Storing LF in the repo kills that noise.
+#
+# `text=auto` = git decides what is text, stores LF, and checks out using the
+# platform default. It does NOT rewrite history; to clean the existing working
+# tree run `git add --renormalize .` as its own separate commit.
+* text=auto
+
+# Always LF, regardless of platform: these are read by Linux containers and by
+# shells where a stray CR is a syntax error, not cosmetic.
+*.py     text eol=lf
+*.sh     text eol=lf
+*.yml    text eol=lf
+*.yaml   text eol=lf
+Dockerfile text eol=lf
+*.sql    text eol=lf
+
+# Always CRLF: Windows-native scripts.
+*.bat    text eol=crlf
+*.cmd    text eol=crlf
+
+# Never touch these — normalisation would corrupt them.
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.webp   binary
+*.ico    binary
+*.svg    text
+*.pdf    binary
+*.woff   binary
+*.woff2  binary
+*.ttf    binary
+*.sqlite3 binary

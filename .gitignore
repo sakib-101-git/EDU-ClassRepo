@@ -1,6 +1,24 @@
 # Dependencies
 node_modules/
 
+# Python — backend/.gitignore covers these too; kept here as a repo-wide safety
+# net so a stray venv or cache outside backend/ can never be committed.
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local databases + collected static
+*.sqlite3
+*.sqlite3-journal
+staticfiles/
+
 # Environment variables
 .env
 .env.local
@@ -27,7 +45,8 @@ Thumbs.db
 
 # Claude Code
 .claude/
-.github/java-upgrade/
+CLAUDE.md
+DIAGNOSTIC_REPORT.md
 
 # Personal reference docs
 docs/
